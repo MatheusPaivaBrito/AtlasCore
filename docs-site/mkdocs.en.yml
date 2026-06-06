@@ -1,0 +1,88 @@
+site_name: AtlasCore
+site_description: Interview-grade backend platform with FastAPI, DDD, Clean Architecture, Postgres, Redis, Kafka and MkDocs.
+site_author: Matheus Paiva
+
+docs_dir: docs/en
+site_dir: site/en
+
+theme:
+  name: material
+  language: en
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: blue
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - tables
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+nav:
+  - Home: index.md
+  - Repository Guide:
+      - Project Map: repository/project-map.md
+      - Application Anatomy: repository/application-anatomy.md
+      - Module Anatomy: repository/module-anatomy.md
+      - Shared Kernel: repository/shared-kernel.md
+  - Architecture:
+      - Architecture Overview: architecture/overview.md
+      - Service Catalog: architecture/service-catalog.md
+      - Service Boundaries: architecture/service-boundaries.md
+      - DDD and Clean Architecture: architecture/ddd-clean-architecture.md
+  - Product APIs:
+      - Auth API: services/auth-api.md
+      - Core API: services/core-api.md
+  - Platform APIs:
+      - Eventing API: services/eventing-api.md
+      - Notification API: services/notification-api.md
+      - Observability API: services/observability-api.md
+  - Background Runtime:
+      - Worker: services/worker.md
+  - Core Domain Example:
+      - Library Context: domains/library.md
+      - Public Assets: domains/public-assets.md
+  - Infrastructure:
+      - Docker Compose: infrastructure/docker-compose.md
+      - Postgres and Alembic: infrastructure/postgres-alembic.md
+      - Redis: infrastructure/redis.md
+      - Kafka and Events: infrastructure/kafka-events.md
+      - Observability Stack: infrastructure/observability.md
+      - Poetry and Tooling: infrastructure/poetry-tooling.md
+  - Quality:
+      - Testing Strategy: quality/testing-strategy.md
+      - Development Workflow: quality/development-workflow.md
+  - Interview Material:
+      - Interview Guide: interview/interview-guide.md
+      - Talking Points: interview/talking-points.md
+      - Glossary: interview/glossary.md
+  - ADRs:
+      - Decision Log: adr/index.md
+      - ADR 001 - Monorepo: adr/001-monorepo.md
+      - ADR 002 - Product and Platform APIs: adr/002-product-platform-apis.md
+      - ADR 003 - Core Owns DB: adr/003-core-owns-database.md
+      - ADR 004 - Global Docs: adr/004-global-docs.md
+      - ADR 005 - Capability-First Platform APIs: adr/005-capability-first-platform-apis.md
