@@ -1,0 +1,20 @@
+FROM python:3.14-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/apps/auth_api/src:/app/packages/shared_kernel/src
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir poetry
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry config virtualenvs.create false
+RUN poetry install --no-root
+
+COPY apps/auth_api/src ./apps/auth_api/src
+COPY packages ./packages
+
+EXPOSE 8001
+
+CMD ["uvicorn", "auth_api.main:app", "--host", "0.0.0.0", "--port", "8001"]
