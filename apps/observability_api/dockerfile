@@ -15,6 +15,6 @@ RUN poetry install --no-root
 COPY apps/observability_api/src ./apps/observability_api/src
 COPY packages ./packages
 
-EXPOSE 8011
+EXPOSE 8000
 
-CMD ["uvicorn", "observability_api.main:app", "--host", "0.0.0.0", "--port", "8011"]
+CMD ["gunicorn", "observability_api.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "2"]

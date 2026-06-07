@@ -15,6 +15,6 @@ RUN poetry install --no-root
 COPY apps/eventing_api/src ./apps/eventing_api/src
 COPY packages ./packages
 
-EXPOSE 8010
+EXPOSE 8000
 
-CMD ["uvicorn", "eventing_api.main:app", "--host", "0.0.0.0", "--port", "8010"]
+CMD ["gunicorn", "eventing_api.main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "2"]
