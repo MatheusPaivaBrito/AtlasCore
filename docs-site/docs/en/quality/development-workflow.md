@@ -15,11 +15,13 @@ The repository has two environment files:
 | `.env` | Local development defaults. |
 | `.env.example` | Copyable/reference version for new machines or CI. |
 
-The Core API reads these values through `core_api.infrastructure.settings.settings`.
+The Core API reads database/cache values through `core_api.infrastructure.settings.settings`.
 
-Connection values are intentionally split into small variables such as `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `REDIS_HOST` and `REDIS_DB`. `DATABASE_URL`, `REDIS_URL` and `KAFKA_BOOTSTRAP_SERVERS` remain available as optional overrides for containers and deploy environments.
+Connection values are intentionally split into small variables such as `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `REDIS_HOST` and `REDIS_DB`. `DATABASE_URL` and `REDIS_URL` remain available as optional overrides for containers and deploy environments.
 
-Shared utilities live in `packages/shared_kernel`. The first concrete utility is `shared_kernel.time.DateTimeService`, which centralizes UTC-aware datetime creation, timezone conversion, formatting and simple range helpers.
+The Core API entry page reads local service ports, public URLs and documentation links through `core_api.infrastructure.platform_discovery.platform_discovery_settings`.
+
+Shared utilities live in `packages/shared_kernel`. Current concrete utilities include `shared_kernel.time.DateTimeService` and the shared error contract under `shared_kernel.errors`.
 
 Core SQLAlchemy entities reuse timestamp and soft-delete behavior through `core_api.infrastructure.database.mixins`.
 

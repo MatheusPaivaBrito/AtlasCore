@@ -45,6 +45,8 @@ apps/
 
 Cada pasta dentro de `apps/` representa uma fronteira de runtime: uma API ou um processo que poderia ser deployado separadamente no futuro.
 
+Pastas estruturais como `apps/`, `packages/` e o `src/` de cada servico nao sao pacotes Python. Elas nao devem carregar `__init__.py` quando nao expõem codigo importavel.
+
 ## `core_api`
 
 ```text
@@ -68,7 +70,10 @@ Pontos importantes:
 | `infrastructure/database/connection.py` | Engine, session factory e dependência FastAPI. |
 | `infrastructure/database/loader.py` | Importa models para o Alembic descobrir metadata. |
 | `infrastructure/database/mixins.py` | Comportamento ORM de timestamp e soft delete. |
+| `infrastructure/settings.py` | Settings da Core para identidade da app, Postgres e Redis. |
+| `infrastructure/platform_discovery.py` | Settings da landing page para portas, URLs publicas e links de docs. |
 | `shared/crud/route_factory.py` | Fábrica de CRUD convencional para recursos simples. |
+| `shared/exceptions.py` | Erros reutilizaveis especificos da Core. |
 | `modules/library/` | Primeiro domínio concreto com relações e CRUD. |
 | `modules/public_assets/` | Metadados de imagens/documentos públicos. |
 
@@ -113,12 +118,45 @@ packages/
   shared_kernel/
 ```
 
-`shared_kernel` deve ser pequeno. Ele serve para primitivas seguras de compartilhar entre serviços: IDs, erros base, helpers de tempo e contratos de eventos.
+`shared_kernel` deve ser pequeno. Ele serve para primitivas seguras de compartilhar entre servicos.
 
 O helper concreto atual e:
 
 ```text
+shared_kernel/errors/application.py
+shared_kernel/errors/handlers.py
 shared_kernel/time/datetime_service.py
 ```
 
+Pastas futuras para IDs ou contratos de eventos so devem entrar quando existir codigo compartilhado real para elas.
+
 Regra de negócio não deve morar aqui.
+
+## `docs-site/`
+
+```text
+docs-site/
+  mkdocs.pt-br.yml
+  mkdocs.en.yml
+  docs/
+```
+
+A documentacao e separada por idioma em dois arquivos MkDocs para melhorar a navegacao.
+
+## `tests/`
+
+```text
+tests/
+  auth_api/
+  core_api/
+  eventing_api/
+  notification_api/
+  observability_api/
+  shared_kernel/
+  integration/
+  conftest.py
+```
+
+Os testes sao agrupados por servico e por contratos de integracao.
+
+As pastas de teste mantem pequenos `__init__.py` porque varios servicos possuem arquivos com o mesmo nome, como `test_health.py`. Sem esses marcadores, o pytest importa esses arquivos como modulos de topo duplicados.

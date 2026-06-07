@@ -25,9 +25,13 @@ Per-service tests keep boundaries visible. Integration tests verify contracts sh
 - `core_api` metadata registration for the `library` and `public_assets` SQLAlchemy models.
 - `core_api` custom docs and landing page.
 - `core_api` settings URL derivation and overrides.
+- `core_api` platform discovery URL/port derivation.
+- `core_api` shared error contract responses.
 - `core_api` database mixins.
 - `core_api` library vertical structure.
 - `shared_kernel.time.DateTimeService`.
+- `shared_kernel.errors` structured error primitives.
+- Shared 404 error contract across all APIs.
 
 ## Technical Note
 

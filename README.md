@@ -141,16 +141,23 @@ Important values:
 | `REDIS_URL` | Optional override, otherwise built by `core_api.infrastructure.settings` |
 | `CORE_API_PORT` | `8000` |
 | `AUTH_API_PORT` | `8001` |
+| `CORE_API_PUBLIC_URL` | `http://localhost:8000` |
 | `AUTH_API_PUBLIC_URL` | `http://localhost:8001` |
-| `AUTH_API_HEALTH_PATH` | `/health` |
-| `AUTH_API_DOCS_PATH` | `/docs` |
+| `EVENTING_API_PUBLIC_URL` | `http://localhost:8002` |
+| `NOTIFICATION_API_PUBLIC_URL` | `http://localhost:8003` |
+| `OBSERVABILITY_API_PUBLIC_URL` | `http://localhost:8004` |
+| `SERVICE_HEALTH_PATH` | `/health` |
+| `SERVICE_DOCS_PATH` | `/docs` |
+| `SERVICE_REDOC_PATH` | `/redoc` |
 | `EVENTING_API_PORT` | `8002` |
 | `NOTIFICATION_API_PORT` | `8003` |
 | `OBSERVABILITY_API_PORT` | `8004` |
 | `DOCS_PT_PORT` | `8080` |
 | `DOCS_EN_PORT` | `8081` |
 
-The Core API exposes these values through `core_api.infrastructure.settings.settings`, so application code can import a single object instead of reading environment variables directly.
+The Core API reads database/cache values through `core_api.infrastructure.settings.settings`.
+
+The entry page reads local service URLs, ports and documentation links through `core_api.infrastructure.platform_discovery.platform_discovery_settings`.
 
 ## Shared Kernel Utilities
 
@@ -159,6 +166,8 @@ Cross-service primitives live in `packages/shared_kernel`.
 Current utilities:
 
 - `shared_kernel.time.DateTimeService` centralizes UTC-aware datetime creation, timezone conversion, formatting and range helpers.
+- `shared_kernel.errors.ApplicationError` and `ErrorTarget` define the shared error contract.
+- `shared_kernel.errors.register_exception_handlers` wires FastAPI handlers for every API.
 
 The Core API database layer also keeps reusable SQLAlchemy mixins in `core_api.infrastructure.database.mixins`, so entities inherit timestamp and soft-delete behavior from one place.
 

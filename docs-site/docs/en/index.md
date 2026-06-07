@@ -19,6 +19,8 @@ It already has:
 - text search and exact filters for query flows;
 - a `public_assets` module for public images/documents;
 - a CRUD route factory for simple resources.
+- a shared structured error contract registered by every API;
+- settings split between Core database/cache concerns and platform discovery concerns.
 
 ## Service Groups
 
@@ -53,6 +55,8 @@ AtlasCore is meant to show that the author can:
 - Place migrations where database ownership lives.
 - Implement a real relational CRUD flow, not only empty folders.
 - Support query, restore and soft delete flows that a real backend needs.
+- Use a consistent error contract with traceable targets.
+- Keep runtime configuration scoped to the service or concern that uses it.
 - Keep Google Cloud Storage as a provider behind `public_assets`, not as its own backend.
 - Prepare for Kafka and event sourcing without pretending the system is event-sourced on day one.
 - Keep documentation and tests close to the architecture.

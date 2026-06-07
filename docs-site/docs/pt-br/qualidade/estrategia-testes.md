@@ -27,12 +27,12 @@ Testes do `shared_kernel` protegem primitivas que podem ser usadas por mais de u
 | Grupo | O que cobre |
 | --- | --- |
 | `auth_api` | Health check. |
-| `core_api` | Health, docs customizados, rotas da livraria, metadata do ORM, settings, mixins e estrutura vertical. |
+| `core_api` | Health, docs customizados, rotas da livraria, metadata do ORM, settings, platform discovery, contrato de erro, mixins e estrutura vertical. |
 | `eventing_api` | Health check. |
 | `notification_api` | Health check. |
 | `observability_api` | Health check. |
-| `integration` | Contrato comum de health entre APIs. |
-| `shared_kernel` | `DateTimeService`. |
+| `integration` | Contrato comum de health e contrato comum de erro entre APIs. |
+| `shared_kernel` | `DateTimeService` e primitivas de erro estruturado. |
 
 ## Nota tecnica
 

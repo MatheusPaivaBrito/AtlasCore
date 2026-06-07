@@ -68,7 +68,9 @@ Variaveis principais:
 | `DATABASE_URL` | override opcional; se vazio, o `settings` monta a URL |
 | `REDIS_URL` | override opcional; se vazio, o `settings` monta a URL |
 
-O `core_api` centraliza a leitura dessas variaveis em `core_api.infrastructure.settings.settings`.
+O `core_api` centraliza variaveis de banco e cache em `core_api.infrastructure.settings.settings`.
+
+A pagina inicial do projeto le portas, URLs dos servicos e links de documentacao por `core_api.infrastructure.platform_discovery.platform_discovery_settings`.
 
 Dentro dos containers, o Compose sobrescreve `DATABASE_URL` para apontar para o host `postgres`, nao para `localhost`.
 
@@ -77,6 +79,8 @@ Dentro dos containers, o Compose sobrescreve `DATABASE_URL` para apontar para o 
 Utilitarios reaproveitaveis vivem em `packages/shared_kernel`.
 
 O helper `shared_kernel.time.DateTimeService` centraliza criacao de datas em UTC, conversao de timezone, serializacao, formatacao, comparacao e calculos simples de delta.
+
+O pacote `shared_kernel.errors` centraliza o contrato generico de erro usado por todas as APIs.
 
 No `core_api`, os modelos SQLAlchemy usam mixins em `core_api.infrastructure.database.mixins` para timestamp e soft delete. Isso evita espalhar `datetime.now()` ou atribuicoes manuais de `deleted_at` pelas rotas.
 

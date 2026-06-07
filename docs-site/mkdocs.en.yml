@@ -46,6 +46,7 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Current State: current-state.md
   - Repository Guide:
       - Project Map: repository/project-map.md
       - Application Anatomy: repository/application-anatomy.md
@@ -56,6 +57,7 @@ nav:
       - Service Catalog: architecture/service-catalog.md
       - Service Boundaries: architecture/service-boundaries.md
       - DDD and Clean Architecture: architecture/ddd-clean-architecture.md
+      - Error Handling: architecture/error-handling.md
   - Product APIs:
       - Auth API: services/auth-api.md
       - Core API: services/core-api.md

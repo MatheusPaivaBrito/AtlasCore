@@ -19,6 +19,8 @@ Ele ja tem:
 - query por texto e por filtros principais;
 - modulo `public_assets` para imagens e documentos publicos;
 - fabrica de rotas CRUD para recursos simples.
+- contrato estruturado de erro registrado por todas as APIs;
+- settings separados entre banco/cache da Core e descoberta da plataforma.
 
 ## APIs de produto
 
@@ -46,6 +48,8 @@ O projeto nao cria um backend por ferramenta. Ele agrupa ferramentas por capacid
 Google Cloud Storage nao vira API; ele fica como provider do modulo `public_assets` dentro do `core_api`.
 
 Kafka nao vira um monte de endpoints soltos; ele pertence a capacidade de eventos, governada por `eventing_api` e executada futuramente pelo `worker`.
+
+Configuracao de runtime tambem fica no lugar certo: `CoreSettings` cuida do que a Core usa para rodar, e `PlatformDiscoverySettings` cuida da pagina inicial que mostra os outros servicos.
 
 ## Como rodar
 

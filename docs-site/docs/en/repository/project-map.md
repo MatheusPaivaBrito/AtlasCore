@@ -51,6 +51,8 @@ apps/
 
 The important idea: a folder under `apps/` is not just a Python package. It represents something that could be deployed independently later.
 
+Structural folders such as `apps/`, `packages/` and each service-level `src/` directory are intentionally not Python packages. They should not carry `__init__.py` files unless they expose importable code.
+
 ## `core_api`
 
 `core_api` owns the relational database and the first real CRUD domain.
@@ -76,7 +78,10 @@ Important pieces:
 | `infrastructure/database/connection.py` | Engine, session factory and FastAPI dependency. |
 | `infrastructure/database/loader.py` | Imports models for Alembic metadata discovery. |
 | `infrastructure/database/mixins.py` | Timestamp and soft-delete ORM behavior. |
+| `infrastructure/settings.py` | Core runtime settings for app identity, Postgres and Redis. |
+| `infrastructure/platform_discovery.py` | Landing-page settings for local service ports, public URLs and docs links. |
 | `shared/crud/route_factory.py` | Conventional CRUD route factory for simple resources. |
+| `shared/exceptions.py` | Core-specific reusable application errors. |
 | `modules/library/` | First concrete domain with relationships and CRUD routes. |
 | `modules/public_assets/` | Public image/document metadata, backed by a storage provider. |
 
@@ -143,13 +148,17 @@ packages/
   shared_kernel/
 ```
 
-`packages/shared_kernel` is intentionally small. It is only for primitives that can be shared safely across services, such as IDs, base errors, time helpers and event contract primitives.
+`packages/shared_kernel` is intentionally small. It is only for primitives that can be shared safely across services.
 
 Current concrete primitive:
 
 ```text
+shared_kernel/errors/application.py
+shared_kernel/errors/handlers.py
 shared_kernel/time/datetime_service.py
 ```
+
+Future folders for IDs or event contract primitives should be added only when real shared code exists.
 
 Business rules should not be placed here. Shared business rules create hidden coupling.
 
@@ -179,3 +188,5 @@ tests/
 ```
 
 Tests are grouped by service plus integration contracts. This lets each service stay testable in isolation while still allowing cross-service checks.
+
+The test folders keep small `__init__.py` markers because several services have files with the same name, such as `test_health.py`. Without package markers, pytest imports those files as duplicate top-level modules.

@@ -1,0 +1,166 @@
+# Estado Atual
+
+Esta pagina e o retrato de fechamento do dia do AtlasCore.
+
+Ela explica o que existe hoje, o que ja funciona, o que e apenas fronteira preparada e o que deve vir depois.
+
+## Formato do repositorio
+
+AtlasCore e um monorepo backend com:
+
+- APIs de produto;
+- APIs de plataforma;
+- worker planejado;
+- shared kernel;
+- Docker Compose para infraestrutura local;
+- Poetry para dependencias;
+- MkDocs em portugues e ingles;
+- testes por servico e contratos entre servicos.
+
+```text
+AtlasCore/
+  apps/
+    auth_api/
+    core_api/
+    eventing_api/
+    notification_api/
+    observability_api/
+    worker/
+  packages/
+    shared_kernel/
+  docs-site/
+  tests/
+```
+
+Pastas estruturais nao viram pacote Python quando nao expõem codigo importavel. Placeholders vazios foram removidos; as pastas existem porque ha codigo ou documentacao justificando sua presenca.
+
+## Funcional hoje
+
+O servico mais completo hoje e o `core_api`.
+
+Ele possui:
+
+- factory FastAPI;
+- Swagger UI escuro customizado;
+- pagina ReDoc;
+- pagina inicial do projeto em `/`;
+- tratamento global de erros;
+- conexao Postgres via SQLAlchemy;
+- Alembic dentro do servico dono do banco;
+- bounded context `library` verticalizado;
+- rotas CRUD para libraries, shelves, sections, books, readers e rentals;
+- soft delete e rotas de restore;
+- queries com busca textual e filtros exatos;
+- modulo `public_assets` para imagens/documentos publicos;
+- mixins SQLAlchemy de timestamp e soft delete;
+- settings separados entre configuracao de banco/cache da Core e descoberta da plataforma.
+
+## Servicos
+
+| Runtime | Estado | Responsabilidade |
+| --- | --- | --- |
+| `core_api` | Primeiro slice funcional | API de negocio, dona do Postgres, CRUD de livraria e assets publicos. |
+| `auth_api` | Fronteira preparada | Identidade, autenticacao, sessoes e controle de acesso. |
+| `eventing_api` | Fronteira preparada | Contratos Kafka, schemas, topicos, streams, outbox e projections. |
+| `notification_api` | Fronteira preparada | E-mail, Slack, templates, canais e tentativas de entrega. |
+| `observability_api` | Fronteira preparada | Incidentes, alertas, dashboards, consultas de logs e releases. |
+| `worker` | Runtime planejado | Consumers Kafka, dispatch de outbox, projections e jobs em background. |
+
+As APIs de plataforma existem como fronteiras de servico. Elas ainda nao fingem ser implementacoes completas.
+
+## Shared Kernel
+
+`packages/shared_kernel` contem hoje:
+
+- `shared_kernel.time.DateTimeService`;
+- `shared_kernel.errors.ApplicationError`;
+- `shared_kernel.errors.ErrorTarget`;
+- `shared_kernel.errors.register_exception_handlers`.
+
+O shared kernel deve continuar pequeno. Ele guarda primitivas seguras de compartilhar, nao regras de produto.
+
+## Tratamento de erros
+
+Toda API registra o mesmo contrato compartilhado de erro dentro do proprio `bootstrap/exceptions.py`.
+
+O formato de resposta inclui:
+
+- `code`;
+- `message`;
+- `status_code`;
+- `service`;
+- `method`;
+- `path`;
+- `trace_id`;
+- `target` opcional.
+
+Erros reutilizaveis especificos da Core ficam em:
+
+```text
+apps/core_api/src/core_api/shared/exceptions.py
+```
+
+Erros especificos de dominio ficam dentro do dominio dono da regra, por exemplo:
+
+```text
+apps/core_api/src/core_api/modules/library/domain/exceptions.py
+```
+
+## Configuracao
+
+A configuracao foi separada de proposito.
+
+`core_api.infrastructure.settings.CoreSettings` possui valores que a propria Core usa:
+
+- identidade da aplicacao;
+- ambiente/debug;
+- Postgres;
+- Redis;
+- `DATABASE_URL`;
+- `REDIS_URL`.
+
+`core_api.infrastructure.platform_discovery.PlatformDiscoverySettings` possui valores usados pela pagina inicial da Core para descrever a plataforma local:
+
+- portas das APIs;
+- URLs publicas das APIs;
+- paths de health/docs/ReDoc;
+- portas e URLs publicas do MkDocs;
+- timeout para checagem de disponibilidade.
+
+As variaveis Kafka continuam no `.env` e Docker Compose porque Kafka ainda faz parte do plano de plataforma. Quando `eventing_api` comecar a usar adapters Kafka de verdade, esses settings devem nascer em `eventing_api/infrastructure/settings.py`.
+
+## Documentacao
+
+A documentacao usa dois arquivos MkDocs:
+
+- `docs-site/mkdocs.pt-br.yml`;
+- `docs-site/mkdocs.en.yml`.
+
+Isso deixa a navegacao de cada idioma limpa, em vez de misturar portugues e ingles em todas as paginas.
+
+## Testes
+
+A suite cobre hoje:
+
+- health endpoints de todas as APIs;
+- contrato de health entre servicos;
+- contrato de erro entre servicos;
+- docs UI da Core API;
+- registro de rotas da Core API;
+- estrutura vertical da livraria;
+- montagem de URLs por settings;
+- settings de descoberta da plataforma;
+- mixins de banco;
+- helper de datetime compartilhado;
+- contrato de erro compartilhado.
+
+## Proximos passos sensatos
+
+Os proximos passos de implementacao deveriam ser:
+
+- terminar um CRUD real com banco alem dos testes de registro de rota;
+- adicionar primitivas de auth em `auth_api`;
+- decidir quando Redis vira cache real;
+- ligar Kafka apenas quando houver comportamento real de evento/outbox;
+- adicionar settings especificos em cada API quando cada uma comecar a usar providers reais;
+- manter a documentacao atualizada sempre que um placeholder virar codigo.

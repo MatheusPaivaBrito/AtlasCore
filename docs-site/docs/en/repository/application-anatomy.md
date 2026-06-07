@@ -50,6 +50,7 @@ Why keep it tiny?
 ```text
 bootstrap/
   app.py
+  exceptions.py
   docs.py
   routes.py
   health.py
@@ -60,6 +61,7 @@ bootstrap/
 | File | Why It Exists |
 | --- | --- |
 | `app.py` | Creates the FastAPI application and calls route registration. |
+| `exceptions.py` | Registers the API error handlers using the shared error contract. |
 | `docs.py` | Serves the custom dark Swagger UI and ReDoc pages. |
 | `routes.py` | Central route registry for that service. New module routers are wired here. |
 | `health.py` | Stable `/health` endpoint used by tests and containers. |
@@ -67,6 +69,8 @@ bootstrap/
 | `templates/` | Jinja templates used by bootstrap pages. |
 
 Startup hooks, dependency containers and lifecycle wiring should be added when there is real startup work. Until then, the bootstrap stays small.
+
+Every API has its own `bootstrap/exceptions.py`. Today those files call the same shared handler registration, but keeping the file per API gives each service an obvious place for future service-specific mappings.
 
 ## `infrastructure/`
 
@@ -77,8 +81,13 @@ The folder should only contain adapters that exist today. For example, `core_api
 ```text
 infrastructure/
   database/
+  platform_discovery.py
   settings.py
 ```
+
+`settings.py` is for values used by the Core API itself, such as Postgres and Redis.
+
+`platform_discovery.py` is for values used by the Core landing page to describe the local platform, such as service ports, public URLs and documentation links.
 
 Provider adapters that belong to a single capability stay inside that module. Example:
 

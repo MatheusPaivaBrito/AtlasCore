@@ -22,6 +22,7 @@ apps/<api>/
 | --- | --- |
 | `main.py` | Entry point ASGI importado pelo Uvicorn. |
 | `bootstrap/app.py` | Cria o app FastAPI. |
+| `bootstrap/exceptions.py` | Registra os handlers de erro da API usando o contrato compartilhado. |
 | `bootstrap/routes.py` | Registra routers da API. |
 | `bootstrap/health.py` | Endpoint `/health`. |
 | `bootstrap/docs.py` | Swagger/ReDoc customizados quando a API precisar. |
@@ -37,14 +38,21 @@ apps/<api>/
 
 Quando Redis, Kafka, telemetry ou dependency injection entrarem de verdade, esses arquivos podem nascer com codigo real.
 
+Toda API possui seu proprio `bootstrap/exceptions.py`. Hoje esses arquivos chamam o mesmo registrador compartilhado, mas manter um arquivo por API deixa claro onde entram mapeamentos especificos do servico no futuro.
+
 ## Exemplo no Core
 
 No `core_api`, a infraestrutura global atual e apenas:
 
 ```text
 infrastructure/database/
+infrastructure/platform_discovery.py
 infrastructure/settings.py
 ```
+
+`settings.py` guarda valores usados pela propria Core API, como Postgres e Redis.
+
+`platform_discovery.py` guarda valores usados pela pagina inicial da Core para descrever a plataforma local, como portas dos servicos, URLs publicas e links da documentacao.
 
 O database possui:
 
