@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ service_name }}</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --background: #080c14;
+        --panel: #101827;
+        --panel-soft: #162033;
+        --border: #2a3850;
+        --text: #e7edf6;
+        --muted: #9aa8bd;
+        --accent: #58c4dc;
+        --accent-strong: #8be9fd;
+        --success: #7ee787;
+        --warning: #f2cc60;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background:
+          radial-gradient(circle at top left, rgba(88, 196, 220, 0.14), transparent 30rem),
+          linear-gradient(135deg, #080c14 0%, #101827 48%, #0d1524 100%);
+        color: var(--text);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      main {
+        width: min(1180px, calc(100% - 32px));
+        min-height: 100vh;
+        margin: 0 auto;
+        display: grid;
+        align-content: center;
+        gap: 28px;
+        padding: 44px 0;
+      }
+
+      header {
+        display: grid;
+        gap: 18px;
+        max-width: 900px;
+      }
+
+      .eyebrow {
+        width: fit-content;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(16, 24, 39, 0.76);
+        color: var(--accent-strong);
+        font-size: 0.82rem;
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2.6rem, 7vw, 5rem);
+        line-height: 0.95;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: 0;
+      }
+
+      p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 1.02rem;
+        line-height: 1.65;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 4px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 16px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--panel);
+        color: var(--text);
+        font-weight: 700;
+        text-decoration: none;
+        transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+      }
+
+      .button:hover {
+        border-color: var(--accent);
+        background: var(--panel-soft);
+        transform: translateY(-1px);
+      }
+
+      .button.primary {
+        border-color: rgba(88, 196, 220, 0.62);
+        background: #123142;
+        color: #ecfeff;
+      }
+
+      .button.disabled {
+        pointer-events: none;
+        color: #6f7d92;
+        background: rgba(16, 24, 39, 0.58);
+      }
+
+      .section {
+        display: grid;
+        gap: 14px;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 18px;
+      }
+
+      .section-title p {
+        max-width: 640px;
+        font-size: 0.95rem;
+      }
+
+      .api-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .docs-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .card {
+        min-height: 214px;
+        padding: 18px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(16, 24, 39, 0.86);
+        display: grid;
+        align-content: start;
+        gap: 12px;
+      }
+
+      .card.compact {
+        min-height: 146px;
+      }
+
+      .card h3 {
+        margin: 0;
+        font-size: 1rem;
+        letter-spacing: 0;
+      }
+
+      .status {
+        display: inline-flex;
+        width: fit-content;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 8px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--warning);
+      }
+
+      .dot.online {
+        background: var(--success);
+      }
+
+      .links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      .mini-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .mini-link.disabled {
+        pointer-events: none;
+        color: #6f7d92;
+      }
+
+      code {
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--accent-strong);
+      }
+
+      @media (max-width: 1120px) {
+        .api-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 760px) {
+        main {
+          align-content: start;
+          padding-top: 32px;
+        }
+
+        .api-grid,
+        .docs-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-title {
+          align-items: start;
+          flex-direction: column;
+        }
+
+        .actions {
+          flex-direction: column;
+        }
+
+        .button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <span class="eyebrow">FastAPI - DDD - Clean Architecture</span>
+        <h1>{{ service_name }}</h1>
+        <p>
+          AtlasCore is a backend foundation with product APIs, platform APIs, local infrastructure,
+          MkDocs documentation and a Core API that already exposes a verticalized library domain.
+        </p>
+        <nav class="actions" aria-label="Primary project links">
+          <a class="button primary" href="{{ core_docs_url }}">Core Swagger</a>
+          <a class="button" href="{{ core_redoc_url }}">Core ReDoc</a>
+          <a class="button" href="{{ docs_pt_url }}">MkDocs PT-BR</a>
+          <a class="button" href="{{ docs_en_url }}">MkDocs EN</a>
+        </nav>
+      </header>
+
+      <section class="section" aria-label="API runtimes">
+        <div class="section-title">
+          <h2>API runtimes</h2>
+          <p>Each backend has its own port. Online services expose Swagger/ReDoc links; offline services still show the expected local address.</p>
+        </div>
+        <div class="api-grid">
+          {% for service in api_services %}
+            <article class="card">
+              <span class="status">
+                <span class="dot{% if service.available %} online{% endif %}"></span>
+                {{ service.name }} {% if service.available %}online{% else %}offline{% endif %}
+              </span>
+              <h3>{{ service.name }}</h3>
+              <p>{{ service.description }}</p>
+              <p><code>localhost:{{ service.port }}</code></p>
+              <div class="links" aria-label="{{ service.name }} links">
+                {% if service.available %}
+                  <a class="mini-link" href="{{ service.docs_url }}">Swagger</a>
+                  <a class="mini-link" href="{{ service.redoc_url }}">ReDoc</a>
+                {% else %}
+                  <span class="mini-link disabled">Swagger</span>
+                  <span class="mini-link disabled">ReDoc</span>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="section" aria-label="Documentation sites">
+        <div class="section-title">
+          <h2>Project documentation</h2>
+          <p>MkDocs runs separately from the APIs so the architecture guide can be served while backends are started and stopped independently.</p>
+        </div>
+        <div class="docs-grid">
+          {% for site in documentation_sites %}
+            <article class="card compact">
+              <span class="status">
+                <span class="dot{% if site.available %} online{% endif %}"></span>
+                {{ site.name }} {% if site.available %}online{% else %}offline{% endif %}
+              </span>
+              <h3>{{ site.name }}</h3>
+              <p>{{ site.description }}</p>
+              <p><code>localhost:{{ site.port }}</code></p>
+              <div class="links" aria-label="{{ site.name }} links">
+                {% if site.available %}
+                  <a class="mini-link" href="{{ site.base_url }}">Open docs</a>
+                {% else %}
+                  <span class="mini-link disabled">Open docs</span>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
