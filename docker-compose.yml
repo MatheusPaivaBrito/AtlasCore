@@ -1,3 +1,28 @@
+x-atlas-service-urls: &atlas-service-urls
+  CORE_API_PUBLIC_URL: http://localhost:${CORE_API_PORT:-8000}
+  AUTH_API_PUBLIC_URL: http://localhost:${AUTH_API_PORT:-8001}
+  EVENTING_API_PUBLIC_URL: http://localhost:${EVENTING_API_PORT:-8002}
+  NOTIFICATION_API_PUBLIC_URL: http://localhost:${NOTIFICATION_API_PORT:-8003}
+  OBSERVABILITY_API_PUBLIC_URL: http://localhost:${OBSERVABILITY_API_PORT:-8004}
+  CORE_API_INTERNAL_URL: http://core-api:8000
+  AUTH_API_INTERNAL_URL: http://auth-api:8000
+  EVENTING_API_INTERNAL_URL: http://eventing-api:8000
+  NOTIFICATION_API_INTERNAL_URL: http://notification-api:8000
+  OBSERVABILITY_API_INTERNAL_URL: http://observability-api:8000
+
+x-atlas-cors: &atlas-cors
+  CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-1}
+  CORE_API_CORS_ENABLED: ${CORE_API_CORS_ENABLED:-1}
+  CORE_API_CORS_ALLOWED_ORIGINS: ${CORE_API_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+  AUTH_API_CORS_ENABLED: ${AUTH_API_CORS_ENABLED:-1}
+  AUTH_API_CORS_ALLOWED_ORIGINS: ${AUTH_API_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+  EVENTING_API_CORS_ENABLED: ${EVENTING_API_CORS_ENABLED:-1}
+  EVENTING_API_CORS_ALLOWED_ORIGINS: ${EVENTING_API_CORS_ALLOWED_ORIGINS:-}
+  NOTIFICATION_API_CORS_ENABLED: ${NOTIFICATION_API_CORS_ENABLED:-1}
+  NOTIFICATION_API_CORS_ALLOWED_ORIGINS: ${NOTIFICATION_API_CORS_ALLOWED_ORIGINS:-}
+  OBSERVABILITY_API_CORS_ENABLED: ${OBSERVABILITY_API_CORS_ENABLED:-1}
+  OBSERVABILITY_API_CORS_ALLOWED_ORIGINS: ${OBSERVABILITY_API_CORS_ALLOWED_ORIGINS:-}
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -74,6 +99,7 @@ services:
     container_name: atlas-auth-api
     profiles: ["dev", "auth", "apis"]
     environment:
+      <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: auth_api
       REDIS_URL: redis://redis:6379/1
     ports:
@@ -89,6 +115,7 @@ services:
     container_name: atlas-core-api
     profiles: ["dev", "core", "apis"]
     environment:
+      <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: core_api
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${POSTGRES_DB:-atlas_core}
       REDIS_URL: redis://redis:6379/1
@@ -107,6 +134,7 @@ services:
     container_name: atlas-eventing-api
     profiles: ["dev", "eventing", "platform"]
     environment:
+      <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: eventing_api
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${POSTGRES_DB:-atlas_core}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -125,6 +153,7 @@ services:
     container_name: atlas-notification-api
     profiles: ["dev", "notifications", "platform"]
     environment:
+      <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: notification_api
       REDIS_URL: redis://redis:6379/1
     ports:
@@ -140,6 +169,7 @@ services:
     container_name: atlas-observability-api
     profiles: ["dev", "observability", "platform"]
     environment:
+      <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: observability_api
       LOKI_URL: http://loki:3100
       GRAFANA_URL: http://grafana:3000

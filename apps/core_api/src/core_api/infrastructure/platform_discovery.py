@@ -29,6 +29,15 @@ class PlatformDiscoverySettings(BaseSettings):
     OBSERVABILITY_API_PUBLIC_URL: str = "http://localhost:8004"
 
     # ------------------------------------
+    # API INTERNAL URLS
+    # ------------------------------------
+    CORE_API_INTERNAL_URL: str = "http://localhost:8000"
+    AUTH_API_INTERNAL_URL: str = "http://localhost:8001"
+    EVENTING_API_INTERNAL_URL: str = "http://localhost:8002"
+    NOTIFICATION_API_INTERNAL_URL: str = "http://localhost:8003"
+    OBSERVABILITY_API_INTERNAL_URL: str = "http://localhost:8004"
+
+    # ------------------------------------
     # SERVICE DISCOVERY PATHS
     # ------------------------------------
     SERVICE_HEALTH_PATH: str = Field(
