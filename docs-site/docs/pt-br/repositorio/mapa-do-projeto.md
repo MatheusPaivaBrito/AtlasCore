@@ -64,12 +64,47 @@ Pontos importantes:
 | --- | --- |
 | `alembic/versions/20260606_0001_core_schema.py` | Migration inicial de `library` e `public_assets`. |
 | `alembic/versions/20260606_0002_library_soft_delete_sections.py` | Adiciona soft delete, `library_sections` e localizacao por secao. |
-| `infrastructure/database/base.py` | Base SQLAlchemy e colunas comuns. |
+| `infrastructure/database/base.py` | Base declarativa SQLAlchemy e `BaseModel`. |
 | `infrastructure/database/connection.py` | Engine, session factory e dependência FastAPI. |
 | `infrastructure/database/loader.py` | Importa models para o Alembic descobrir metadata. |
+| `infrastructure/database/mixins.py` | Comportamento ORM de timestamp e soft delete. |
 | `shared/crud/route_factory.py` | Fábrica de CRUD convencional para recursos simples. |
 | `modules/library/` | Primeiro domínio concreto com relações e CRUD. |
 | `modules/public_assets/` | Metadados de imagens/documentos públicos. |
+
+## `core_api.modules.library`
+
+```text
+apps/core_api/src/core_api/modules/library/
+  domains/
+    libraries/
+      library_entity.py
+      library_router.py
+      library_schema.py
+    shelves/
+      shelf_entity.py
+      shelf_router.py
+      shelf_schema.py
+    sections/
+      section_entity.py
+      section_router.py
+      section_schema.py
+    books/
+      book_entity.py
+      book_router.py
+      book_schema.py
+    readers/
+      reader_entity.py
+      reader_router.py
+      reader_schema.py
+    rentals/
+      rental_entity.py
+      rental_router.py
+      rental_schema.py
+  presentation/routes.py
+```
+
+`domains/` e a verticalizacao por recurso. Para trabalhar em livros, por exemplo, voce abre `domains/books/` e encontra entidade, schema HTTP e router juntos.
 
 ## `packages/`
 
@@ -79,5 +114,11 @@ packages/
 ```
 
 `shared_kernel` deve ser pequeno. Ele serve para primitivas seguras de compartilhar entre serviços: IDs, erros base, helpers de tempo e contratos de eventos.
+
+O helper concreto atual e:
+
+```text
+shared_kernel/time/datetime_service.py
+```
 
 Regra de negócio não deve morar aqui.

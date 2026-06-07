@@ -9,6 +9,7 @@ tests/
   eventing_api/
   notification_api/
   observability_api/
+  shared_kernel/
   integration/
   conftest.py
 ```
@@ -22,6 +23,11 @@ Per-service tests keep boundaries visible. Integration tests verify contracts sh
 - Health endpoint per API.
 - Shared health contract across all APIs.
 - `core_api` metadata registration for the `library` and `public_assets` SQLAlchemy models.
+- `core_api` custom docs and landing page.
+- `core_api` settings URL derivation and overrides.
+- `core_api` database mixins.
+- `core_api` library vertical structure.
+- `shared_kernel.time.DateTimeService`.
 
 ## Technical Note
 

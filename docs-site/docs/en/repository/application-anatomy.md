@@ -50,15 +50,21 @@ Why keep it tiny?
 ```text
 bootstrap/
   app.py
+  docs.py
   routes.py
   health.py
+  home.py
+  templates/
 ```
 
 | File | Why It Exists |
 | --- | --- |
 | `app.py` | Creates the FastAPI application and calls route registration. |
+| `docs.py` | Serves the custom dark Swagger UI and ReDoc pages. |
 | `routes.py` | Central route registry for that service. New module routers are wired here. |
 | `health.py` | Stable `/health` endpoint used by tests and containers. |
+| `home.py` | Serves the Core API landing page at `/`. |
+| `templates/` | Jinja templates used by bootstrap pages. |
 
 Startup hooks, dependency containers and lifecycle wiring should be added when there is real startup work. Until then, the bootstrap stays small.
 
@@ -92,6 +98,17 @@ Current `core_api` modules:
 library
 public_assets
 ```
+
+Resource-heavy modules can be split again by resource. The `library` bounded context uses:
+
+```text
+modules/library/domains/books/
+  book_entity.py
+  book_router.py
+  book_schema.py
+```
+
+This keeps the files needed for one resource in one folder, while the bounded-context router remains a small aggregator.
 
 ## `shared/`
 

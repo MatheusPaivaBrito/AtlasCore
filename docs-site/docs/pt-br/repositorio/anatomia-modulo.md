@@ -27,7 +27,10 @@ modules/library/
   application/
   infrastructure/persistence/
   presentation/routes.py
-  presentation/schemas.py
+  domains/books/
+    book_entity.py
+    book_router.py
+    book_schema.py
 ```
 
-O módulo `library` usa SQLAlchemy em `infrastructure/persistence/models.py`, schemas HTTP em `presentation/schemas.py` e registra suas rotas em `presentation/routes.py`.
+O modulo `library` usa `presentation/routes.py` como agregador do bounded context, mas cada recurso importante fica em sua propria pasta vertical. Assim, para trabalhar em livros, voce abre `domains/books/` e encontra entidade, schema e router juntos.

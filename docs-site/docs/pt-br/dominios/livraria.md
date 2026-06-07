@@ -19,6 +19,44 @@ Uma biblioteca possui estantes. Estantes podem ter secoes. Livros ficam em uma e
 | `Reader` | Usuario/leitor do negocio, sem relacao direta com login ainda. |
 | `BookRental` | Registro de aluguel entre leitor e livro. |
 
+## Estrutura vertical por recurso
+
+`library` e o bounded context. Dentro dele, os recursos principais ficam separados em pastas verticais:
+
+```text
+apps/core_api/src/core_api/modules/library/
+  domains/
+    libraries/
+      library_entity.py
+      library_router.py
+      library_schema.py
+    shelves/
+      shelf_entity.py
+      shelf_router.py
+      shelf_schema.py
+    sections/
+      section_entity.py
+      section_router.py
+      section_schema.py
+    books/
+      book_entity.py
+      book_router.py
+      book_schema.py
+    readers/
+      reader_entity.py
+      reader_router.py
+      reader_schema.py
+    rentals/
+      rental_entity.py
+      rental_router.py
+      rental_schema.py
+  presentation/routes.py
+```
+
+`presentation/routes.py` registra o bounded context. Os detalhes de cada recurso ficam no proprio recurso.
+
+Isso deixa o Swagger e o codigo mais faceis de filtrar: `books - query`, `books - command`, `shelves - query`, `shelves - command`, etc.
+
 ## Relacoes
 
 | Tipo | Exemplo |

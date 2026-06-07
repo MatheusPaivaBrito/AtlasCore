@@ -36,12 +36,12 @@ Os outros servicos ficam atras de profiles do Compose.
 O Makefile encapsula esses profiles.
 
 ```bash
-make dev-core
-make dev-auth
-make dev-eventing
-make dev-notifications
-make dev-observability
-make dev
+make compose-core
+make compose-auth
+make compose-eventing
+make compose-notifications
+make compose-observability
+make compose-dev
 ```
 
 ## `.env`
@@ -54,13 +54,31 @@ Variaveis principais:
 
 | Variavel | Padrao |
 | --- | --- |
-| `DATABASE_URL` | `postgresql+psycopg://atlas:atlas@localhost:5432/atlas_core` |
-| `REDIS_URL` | `redis://localhost:6379/1` |
+| `APP_NAME` | `AtlasCore` |
+| `ENVIRONMENT` | `development` |
+| `APP_DEBUG` | `1` |
+| `POSTGRES_HOST` | `localhost` |
+| `POSTGRES_PORT` | `5432` |
 | `POSTGRES_DB` | `atlas_core` |
 | `POSTGRES_USER` | `atlas` |
 | `POSTGRES_PASSWORD` | `atlas` |
+| `REDIS_HOST` | `localhost` |
+| `REDIS_PORT` | `6379` |
+| `REDIS_DB` | `1` |
+| `DATABASE_URL` | override opcional; se vazio, o `settings` monta a URL |
+| `REDIS_URL` | override opcional; se vazio, o `settings` monta a URL |
+
+O `core_api` centraliza a leitura dessas variaveis em `core_api.infrastructure.settings.settings`.
 
 Dentro dos containers, o Compose sobrescreve `DATABASE_URL` para apontar para o host `postgres`, nao para `localhost`.
+
+## Shared Kernel e mixins
+
+Utilitarios reaproveitaveis vivem em `packages/shared_kernel`.
+
+O helper `shared_kernel.time.DateTimeService` centraliza criacao de datas em UTC, conversao de timezone, serializacao, formatacao, comparacao e calculos simples de delta.
+
+No `core_api`, os modelos SQLAlchemy usam mixins em `core_api.infrastructure.database.mixins` para timestamp e soft delete. Isso evita espalhar `datetime.now()` ou atribuicoes manuais de `deleted_at` pelas rotas.
 
 ## Postgres + Alembic
 
@@ -85,6 +103,6 @@ Ele sera usado pela estrategia de eventos, outbox, consumers e event sourcing fu
 
 ## Observabilidade
 
-Loki e Grafana tambem nao sobem por padrao. Eles entram pelo profile `observability` ou pelo `make dev`.
+Loki e Grafana tambem nao sobem por padrao. Eles entram pelo profile `observability` ou pelo `make compose-observability`.
 
 Sentry entra como provider futuro dentro de `observability_api`.

@@ -27,15 +27,15 @@ It already has:
 | Service | Main Responsibility | Port |
 | --- | --- | --- |
 | `auth_api` | Identity, authentication, sessions and access control | `8001` |
-| `core_api` | Main business API, relational database owner, library and public assets | `8002` |
+| `core_api` | Main business API, relational database owner, library and public assets | `8000` |
 
 ### Platform APIs
 
 | Service | Main Responsibility | Port |
 | --- | --- | --- |
-| `eventing_api` | Kafka, event contracts, schemas, outbox, streams and projections | `8010` |
-| `observability_api` | Sentry, Grafana, Loki, incidents, dashboards, alerts and releases | `8011` |
-| `notification_api` | Slack, e-mail, templates, channels and delivery attempts | `8012` |
+| `eventing_api` | Kafka, event contracts, schemas, outbox, streams and projections | `8002` |
+| `observability_api` | Sentry, Grafana, Loki, incidents, dashboards, alerts and releases | `8004` |
+| `notification_api` | Slack, e-mail, templates, channels and delivery attempts | `8003` |
 
 ### Background Runtime
 
@@ -60,7 +60,7 @@ AtlasCore is meant to show that the author can:
 ## How to Run
 
 ```bash
-docker compose up
+make compose
 ```
 
 By default this starts only Postgres and Redis.
@@ -69,8 +69,24 @@ By default this starts only Postgres and Redis.
 make dev
 ```
 
-This starts every available backend and the supporting services enabled by Compose profiles.
+This runs core_api locally with Uvicorn reload on port 8000.
+
+## AtlasCore Entry Page
+
+Opening `http://localhost:8000/` returns the AtlasCore project entry page served by the Core API.
+
+It shows:
+
+- AtlasCore context;
+- link to `http://localhost:8000/docs`;
+- link to `http://localhost:8000/redoc`;
+- runtime status for `core_api`, `auth_api`, `eventing_api`, `notification_api` and `observability_api`;
+- Swagger/ReDoc links for each API when it is online;
+- MkDocs PT-BR and EN documentation links on `8080` and `8081`;
+- documentation server availability when MkDocs is running.
+
+The Core API Swagger UI is interview-friendly: dark theme, filter enabled, operations collapsed by default and route groups separated by resource, such as `books - query`, `books - command`, `shelves - query` and `shelves - command`.
 
 ---
 
-[Ver versao em portugues](http://localhost:8000){ .md-button }
+[Ver versao em portugues](http://localhost:8080){ .md-button }

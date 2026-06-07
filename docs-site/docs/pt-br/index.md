@@ -50,7 +50,7 @@ Kafka nao vira um monte de endpoints soltos; ele pertence a capacidade de evento
 ## Como rodar
 
 ```bash
-docker compose up
+make compose
 ```
 
 Por padrao isso sobe apenas Postgres e Redis.
@@ -59,8 +59,24 @@ Por padrao isso sobe apenas Postgres e Redis.
 make dev
 ```
 
-Esse comando sobe todos os backends disponiveis e os servicos de suporte ligados por profiles.
+Esse comando roda o core_api localmente com Uvicorn reload na porta 8000.
+
+## Pagina de entrada do AtlasCore
+
+Ao abrir `http://localhost:8000/`, a Core API entrega a pagina de entrada do AtlasCore.
+
+Ela mostra:
+
+- contexto do AtlasCore;
+- link para `http://localhost:8000/docs`;
+- link para `http://localhost:8000/redoc`;
+- status de runtime de `core_api`, `auth_api`, `eventing_api`, `notification_api` e `observability_api`;
+- links Swagger/ReDoc para cada API quando ela estiver online;
+- links para MkDocs PT-BR e EN nas portas `8080` e `8081`;
+- disponibilidade dos servidores de documentacao quando o MkDocs estiver rodando.
+
+O Swagger da Core API foi customizado para entrevista: tema escuro, filtro habilitado, operacoes fechadas por padrao e grupos separados por recurso, como `books - query`, `books - command`, `shelves - query` e `shelves - command`.
 
 ---
 
-[View English version](http://localhost:8001){ .md-button }
+[View English version](http://localhost:8081){ .md-button }

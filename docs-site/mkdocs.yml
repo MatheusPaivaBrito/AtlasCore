@@ -9,6 +9,7 @@ theme:
   name: material
   language: pt-BR
   features:
+    - navigation.instant
     - navigation.sections
     - navigation.expand
     - navigation.top
@@ -16,11 +17,13 @@ theme:
     - navigation.indexes
     - content.code.copy
     - content.tabs.link
+    - search.highlight
+    - search.suggest
     - toc.follow
   palette:
-    - scheme: default
-      primary: indigo
-      accent: blue
+    - scheme: slate
+      primary: black
+      accent: cyan
 
 markdown_extensions:
   - admonition
@@ -47,10 +50,12 @@ nav:
       - Mapa do Projeto: repositorio/mapa-do-projeto.md
       - Anatomia de uma API: repositorio/anatomia-api.md
       - Anatomia de Módulo: repositorio/anatomia-modulo.md
+      - Shared Kernel: repositorio/shared-kernel.md
   - Arquitetura:
       - Visão Arquitetural: arquitetura/visao-geral.md
       - Catálogo de Serviços: arquitetura/catalogo-servicos.md
       - Fronteiras: arquitetura/fronteiras.md
+      - DDD e Clean Architecture: arquitetura/ddd-clean-architecture.md
   - Serviços:
       - Auth API: servicos/auth-api.md
       - Core API: servicos/core-api.md
@@ -62,5 +67,7 @@ nav:
       - Livraria: dominios/livraria.md
       - Public Assets: dominios/public-assets.md
   - Infraestrutura: infraestrutura.md
-  - Testes e Workflow: testes-workflow.md
+  - Qualidade:
+      - Estratégia de Testes: qualidade/estrategia-testes.md
+      - Workflow de Desenvolvimento: testes-workflow.md
   - Guia de Entrevista: guia-entrevista.md

@@ -23,6 +23,36 @@ It demonstrates:
 | One-to-many | `Library -> Shelf -> Section -> Book` |
 | Many-to-many with metadata | `Reader <-> Book` through `BookRental` |
 
+Internally, the bounded context is split into vertical resource domains:
+
+```text
+modules/library/domains/
+  libraries/
+    library_entity.py
+    library_router.py
+    library_schema.py
+  shelves/
+    shelf_entity.py
+    shelf_router.py
+    shelf_schema.py
+  sections/
+    section_entity.py
+    section_router.py
+    section_schema.py
+  books/
+    book_entity.py
+    book_router.py
+    book_schema.py
+  readers/
+    reader_entity.py
+    reader_router.py
+    reader_schema.py
+  rentals/
+    rental_entity.py
+    rental_router.py
+    rental_schema.py
+```
+
 Current CRUD resources:
 
 ```text
@@ -77,8 +107,8 @@ The rule is:
 
 - use the factory for simple resources;
 - move to explicit use cases when real business behavior appears;
-- keep HTTP contracts in `presentation/schemas.py`;
-- keep SQLAlchemy models in `infrastructure/persistence/models.py`.
+- keep each resource contract next to its router in `domains/<resource>/<resource>_schema.py`;
+- keep each resource entity next to its router in `domains/<resource>/<resource>_entity.py`.
 
 This avoids duplication now without blocking a richer design later.
 

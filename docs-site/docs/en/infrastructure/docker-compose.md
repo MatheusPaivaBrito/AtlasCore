@@ -34,12 +34,12 @@ Kafka, product APIs, platform APIs, Loki and Grafana do not start by default.
 The Makefile wraps these profiles:
 
 ```bash
-make dev-core
-make dev-auth
-make dev-eventing
-make dev-notifications
-make dev-observability
-make dev
+make compose-core
+make compose-auth
+make compose-eventing
+make compose-notifications
+make compose-observability
+make compose-dev
 ```
 
 ## Product API Services

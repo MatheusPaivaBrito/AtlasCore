@@ -23,6 +23,36 @@ Ele demonstra:
 | One-to-many | `Library -> Shelf -> Section -> Book` |
 | Many-to-many com dados | `Reader <-> Book` via `BookRental` |
 
+Internamente, o bounded context foi quebrado em dominios verticais por recurso:
+
+```text
+modules/library/domains/
+  libraries/
+    library_entity.py
+    library_router.py
+    library_schema.py
+  shelves/
+    shelf_entity.py
+    shelf_router.py
+    shelf_schema.py
+  sections/
+    section_entity.py
+    section_router.py
+    section_schema.py
+  books/
+    book_entity.py
+    book_router.py
+    book_schema.py
+  readers/
+    reader_entity.py
+    reader_router.py
+    reader_schema.py
+  rentals/
+    rental_entity.py
+    rental_router.py
+    rental_schema.py
+```
+
 CRUDs atuais:
 
 ```text
@@ -77,8 +107,8 @@ A regra de uso e simples:
 
 - usar a fabrica para recursos simples;
 - mover para casos de uso proprios quando aparecer regra de negocio relevante;
-- manter schemas HTTP em `presentation/schemas.py`;
-- manter models SQLAlchemy em `infrastructure/persistence/models.py`.
+- manter contrato HTTP junto do recurso em `domains/<resource>/<resource>_schema.py`;
+- manter entidade SQLAlchemy junto do recurso em `domains/<resource>/<resource>_entity.py`.
 
 Isso evita duplicacao agora sem impedir evolucao depois.
 

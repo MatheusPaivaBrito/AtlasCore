@@ -15,72 +15,97 @@ The repository has two environment files:
 | `.env` | Local development defaults. |
 | `.env.example` | Copyable/reference version for new machines or CI. |
 
-## Enter Shell
+The Core API reads these values through `core_api.infrastructure.settings.settings`.
 
-```bash
-poetry shell
-```
+Connection values are intentionally split into small variables such as `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `REDIS_HOST` and `REDIS_DB`. `DATABASE_URL`, `REDIS_URL` and `KAFKA_BOOTSTRAP_SERVERS` remain available as optional overrides for containers and deploy environments.
+
+Shared utilities live in `packages/shared_kernel`. The first concrete utility is `shared_kernel.time.DateTimeService`, which centralizes UTC-aware datetime creation, timezone conversion, formatting and simple range helpers.
+
+Core SQLAlchemy entities reuse timestamp and soft-delete behavior through `core_api.infrastructure.database.mixins`.
 
 ## Run Tests
-
-```bash
-pytest
-```
-
-Or:
 
 ```bash
 poetry run pytest
 ```
 
+If the Poetry shell is already active:
+
+```bash
+pytest
+```
+
 ## Run Documentation
 
 ```bash
-make docs      # Portuguese
-make docs-en   # English
+make docs      # Portuguese on 8080
+make docs-en   # English on 8081
 make docs-all  # build both
 ```
 
 ## Run Default Infrastructure
 
 ```bash
+make compose
+```
+
+This starts only Postgres and Redis. It is the same default behavior as:
+
+```bash
 docker compose up
 ```
 
-This starts only Postgres and Redis.
-
-Equivalent Makefile command:
-
-```bash
-make up
-```
-
-## Run Every Backend
+## Local Development Runtime
 
 ```bash
 make dev
 ```
 
-This enables the `dev` Compose profile and starts every available backend plus support services such as Kafka, Loki and Grafana.
+`make dev` runs `core_api` locally with Uvicorn reload on port `8000`.
 
-## Run One Backend
+Run one backend locally:
 
 ```bash
-make dev-auth
-make dev-core
-make dev-eventing
-make dev-notifications
-make dev-observability
+make dev-core             # 8000
+make dev-auth             # 8001
+make dev-eventing         # 8002
+make dev-notifications    # 8003
+make dev-observability    # 8004
 ```
 
-Short aliases also exist:
+Run every API locally in parallel:
 
 ```bash
-make auth
-make core
-make eventing
-make notifications
-make observability
+make dev-all
+```
+
+## Local Production-Like Runtime
+
+Production-like local commands use Gunicorn with `uvicorn.workers.UvicornWorker`:
+
+```bash
+make prod-core
+make prod-auth
+make prod-eventing
+make prod-notifications
+make prod-observability
+```
+
+`WORKERS` defaults to `2` and can be overridden:
+
+```bash
+make prod-core WORKERS=4
+```
+
+## Docker Compose Runtime
+
+Container commands use the `compose-*` prefix:
+
+```bash
+make compose-dev
+make compose-core
+make compose-auth
+make compose-platform
 ```
 
 ## Database Migrations

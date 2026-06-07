@@ -8,7 +8,7 @@ Choose the documentation language:
 The regular project commands now serve one language at a time:
 
 ```bash
-make docs      # Portuguese
-make docs-en   # English
-make docs-all  # Portuguese on 8000 and English on 8001
+make docs      # Portuguese on 8080
+make docs-en   # English on 8081
+make docs-all  # build both language sites
 ```

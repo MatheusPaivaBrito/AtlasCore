@@ -24,6 +24,9 @@ apps/<api>/
 | `bootstrap/app.py` | Cria o app FastAPI. |
 | `bootstrap/routes.py` | Registra routers da API. |
 | `bootstrap/health.py` | Endpoint `/health`. |
+| `bootstrap/docs.py` | Swagger/ReDoc customizados quando a API precisar. |
+| `bootstrap/home.py` | Landing page HTML da API quando fizer sentido. |
+| `bootstrap/templates/` | Templates Jinja usados por paginas de bootstrap. |
 | `infrastructure/` | Adapters reais da API, como banco, providers ou cache quando existirem. |
 | `modules/` | Dominios/capacidades verticalizadas. |
 | `shared/` | Codigo compartilhado apenas dentro da API. |
@@ -41,6 +44,15 @@ No `core_api`, a infraestrutura global atual e apenas:
 ```text
 infrastructure/database/
 infrastructure/settings.py
+```
+
+O database possui:
+
+```text
+infrastructure/database/base.py
+infrastructure/database/connection.py
+infrastructure/database/loader.py
+infrastructure/database/mixins.py
 ```
 
 O provider do Google Storage fica dentro do modulo `public_assets`, porque pertence a essa capacidade:

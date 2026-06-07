@@ -6,12 +6,6 @@
 poetry install
 ```
 
-## Entrar no shell
-
-```bash
-poetry shell
-```
-
 ## Testes
 
 ```bash
@@ -24,54 +18,88 @@ Com shell ativo:
 pytest
 ```
 
+Os testes atuais cobrem:
+
+- health check por API;
+- contrato de health entre APIs;
+- docs customizados e landing page da Core API;
+- registro ORM para Alembic;
+- estrutura vertical da livraria;
+- settings e montagem de URLs;
+- mixins de banco;
+- `shared_kernel.time.DateTimeService`.
+
 ## Docs
 
 ```bash
-make docs      # Portugues
-make docs-en   # Ingles
+make docs      # Portugues na 8080
+make docs-en   # Ingles na 8081
 make docs-all  # build das duas versoes
 ```
 
 ## Infra padrao
 
 ```bash
+make compose
+```
+
+Por padrao sobe apenas Postgres e Redis. E o mesmo comportamento de:
+
+```bash
 docker compose up
 ```
 
-Por padrao sobe apenas Postgres e Redis.
-
-O alias no Makefile e:
-
-```bash
-make up
-```
-
-## Rodar todos os backends
+## Desenvolvimento local
 
 ```bash
 make dev
 ```
 
-Esse comando ativa o profile `dev` do Compose e sobe todos os backends disponiveis com os servicos de suporte.
+`make dev` roda o `core_api` localmente com Uvicorn reload na porta `8000`.
 
-## Rodar um backend
+Rodar um backend:
 
 ```bash
-make dev-auth
-make dev-core
-make dev-eventing
-make dev-notifications
-make dev-observability
+make dev-core             # 8000
+make dev-auth             # 8001
+make dev-eventing         # 8002
+make dev-notifications    # 8003
+make dev-observability    # 8004
 ```
 
-Tambem existem aliases curtos:
+Rodar todos os backends localmente em paralelo:
 
 ```bash
-make auth
-make core
-make eventing
-make notifications
-make observability
+make dev-all
+```
+
+## Runtime local estilo producao
+
+Os comandos `prod-*` usam Gunicorn com `uvicorn.workers.UvicornWorker`:
+
+```bash
+make prod-core
+make prod-auth
+make prod-eventing
+make prod-notifications
+make prod-observability
+```
+
+`WORKERS` vem como `2`, mas pode ser sobrescrito:
+
+```bash
+make prod-core WORKERS=4
+```
+
+## Docker Compose
+
+Comandos de container usam prefixo `compose-*`:
+
+```bash
+make compose-dev
+make compose-core
+make compose-auth
+make compose-platform
 ```
 
 ## Migrations

@@ -48,9 +48,9 @@ make docs-all
 
 ```bash
 docker compose up  # Postgres and Redis only
-make dev           # every available backend
-make dev-core      # only core_api
-make dev-auth      # only auth_api
+make dev           # core_api locally on 8000
+make dev-core      # core_api locally on 8000
+make dev-auth      # auth_api locally on 8001
 ```
 
 ## Why Keep One Poetry Project

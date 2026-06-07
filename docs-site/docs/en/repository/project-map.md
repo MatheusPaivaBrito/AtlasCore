@@ -72,9 +72,10 @@ Important pieces:
 | --- | --- |
 | `alembic/versions/20260606_0001_core_schema.py` | Initial schema for `library` and `public_assets`. |
 | `alembic/versions/20260606_0002_library_soft_delete_sections.py` | Adds soft delete, `library_sections` and book section location. |
-| `infrastructure/database/base.py` | SQLAlchemy base model and common columns. |
+| `infrastructure/database/base.py` | SQLAlchemy declarative base and `BaseModel`. |
 | `infrastructure/database/connection.py` | Engine, session factory and FastAPI dependency. |
 | `infrastructure/database/loader.py` | Imports models for Alembic metadata discovery. |
+| `infrastructure/database/mixins.py` | Timestamp and soft-delete ORM behavior. |
 | `shared/crud/route_factory.py` | Conventional CRUD route factory for simple resources. |
 | `modules/library/` | First concrete domain with relationships and CRUD routes. |
 | `modules/public_assets/` | Public image/document metadata, backed by a storage provider. |
@@ -85,6 +86,31 @@ Important pieces:
 apps/core_api/src/core_api/modules/library/
   domain/
   application/
+  domains/
+    libraries/
+      library_entity.py
+      library_router.py
+      library_schema.py
+    shelves/
+      shelf_entity.py
+      shelf_router.py
+      shelf_schema.py
+    sections/
+      section_entity.py
+      section_router.py
+      section_schema.py
+    books/
+      book_entity.py
+      book_router.py
+      book_schema.py
+    readers/
+      reader_entity.py
+      reader_router.py
+      reader_schema.py
+    rentals/
+      rental_entity.py
+      rental_router.py
+      rental_schema.py
   infrastructure/
   presentation/
 ```
@@ -99,6 +125,8 @@ This module contains the library model:
 - `BookRental`.
 
 It exposes CRUD routes under `/library/*`.
+
+The `domains/` folder is the resource-level verticalization layer. Each resource keeps its entity, HTTP schema and router together. `presentation/routes.py` only aggregates those routers for the bounded context.
 
 ## `core_api.modules.public_assets`
 
@@ -116,6 +144,12 @@ packages/
 ```
 
 `packages/shared_kernel` is intentionally small. It is only for primitives that can be shared safely across services, such as IDs, base errors, time helpers and event contract primitives.
+
+Current concrete primitive:
+
+```text
+shared_kernel/time/datetime_service.py
+```
 
 Business rules should not be placed here. Shared business rules create hidden coupling.
 
@@ -139,6 +173,7 @@ tests/
   eventing_api/
   notification_api/
   observability_api/
+  shared_kernel/
   integration/
   conftest.py
 ```

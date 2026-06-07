@@ -106,15 +106,37 @@ Examples:
 
 ```text
 apps/core_api/src/core_api/modules/library/
-  domain/entities.py
-  domain/repositories.py
-  domain/exceptions.py
+  domains/
+    libraries/
+      library_entity.py
+      library_router.py
+      library_schema.py
+    shelves/
+      shelf_entity.py
+      shelf_router.py
+      shelf_schema.py
+    sections/
+      section_entity.py
+      section_router.py
+      section_schema.py
+    books/
+      book_entity.py
+      book_router.py
+      book_schema.py
+    readers/
+      reader_entity.py
+      reader_router.py
+      reader_schema.py
+    rentals/
+      rental_entity.py
+      rental_router.py
+      rental_schema.py
   application/dtos.py
   application/use_cases.py
-  infrastructure/persistence/models.py
+  infrastructure/persistence/models.py  # compatibility exports
   infrastructure/persistence/repositories.py
-  presentation/schemas.py
-  presentation/routes.py
+  presentation/schemas.py               # compatibility exports
+  presentation/routes.py                # bounded-context router aggregator
 ```
 
 ## Routes

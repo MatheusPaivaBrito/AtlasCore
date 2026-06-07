@@ -32,12 +32,34 @@ The shared kernel should remain boring. Boring is good here because boring share
 
 ```text
 packages/shared_kernel/
-  README.md
   src/shared_kernel/
     errors/
     events/
     ids/
     time/
+      datetime_service.py
 ```
 
-The directories are placeholders for future primitives.
+The first concrete utility is `shared_kernel.time.DateTimeService`.
+
+It centralizes:
+
+- UTC-aware `datetime` creation;
+- timezone conversion;
+- ISO serialization;
+- formatting;
+- past/future/expired comparisons;
+- day/hour range helpers;
+- simple humanized deltas such as minutes/hours/days ago.
+
+## Why Time Belongs Here
+
+Time handling appears in several backend concerns:
+
+- token expiration;
+- soft delete;
+- audit logs;
+- event timestamps;
+- retries and scheduled jobs.
+
+A single boring helper keeps those flows consistent and avoids scattering `datetime.now()` through the codebase.

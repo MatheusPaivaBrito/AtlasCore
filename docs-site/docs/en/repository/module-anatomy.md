@@ -70,3 +70,18 @@ Typical files:
 | `schemas.py` | Request/response models for HTTP. |
 
 A reviewer should be able to open `presentation/routes.py` and follow the flow inward to use cases and domain rules.
+
+## Resource-Level Verticalization
+
+When a bounded context has several CRUD resources, AtlasCore may split it again by resource.
+
+Example:
+
+```text
+modules/library/domains/books/
+  book_entity.py
+  book_router.py
+  book_schema.py
+```
+
+This keeps the files needed to work on one resource in the same folder. The bounded-context `presentation/routes.py` then becomes a small router aggregator.

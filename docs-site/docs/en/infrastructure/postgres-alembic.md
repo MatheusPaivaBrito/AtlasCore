@@ -26,13 +26,19 @@ apps/core_api/src/core_api/infrastructure/database/
   base.py
   connection.py
   loader.py
+  mixins.py
 ```
 
 | File | Purpose |
 | --- | --- |
-| `base.py` | SQLAlchemy declarative base and common columns: `id`, `created_at`, `updated_at`, `deleted_at`. |
+| `base.py` | SQLAlchemy declarative base and `BaseModel`. |
 | `connection.py` | Engine, session factory and FastAPI session dependency. |
 | `loader.py` | Imports ORM models so Alembic can discover metadata. |
+| `mixins.py` | Timestamp and soft-delete behavior reused by ORM entities. |
+
+`BaseModel` keeps the UUID primary key and inherits timestamp/soft-delete behavior from the mixins.
+
+The timestamp mixin uses `shared_kernel.time.DateTimeService.utc_now` instead of scattering direct clock calls through the ORM layer.
 
 ## Schema
 
@@ -58,3 +64,5 @@ make revision name="describe change"
 ```
 
 `make migrate` runs `alembic upgrade head` using `apps/core_api/alembic.ini`.
+
+Alembic reads the database URL through `core_api.infrastructure.settings.settings`, so migrations use the same configuration path as the application.
