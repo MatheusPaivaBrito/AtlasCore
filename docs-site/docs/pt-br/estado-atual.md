@@ -30,6 +30,7 @@ AtlasCore/
     shared_kernel/
   docs-site/
   tests/
+  toolbox/
 ```
 
 Pastas estruturais nao viram pacote Python quando nao expõem codigo importavel. Placeholders vazios foram removidos; as pastas existem porque ha codigo ou documentacao justificando sua presenca.
@@ -54,6 +55,7 @@ Ele possui:
 - modulo `public_assets` para imagens/documentos publicos;
 - mixins SQLAlchemy de timestamp e soft delete;
 - settings separados entre configuracao de banco/cache da Core e descoberta da plataforma.
+- seed no toolbox para popular dados mockados da livraria da Core API.
 
 ## Servicos
 
@@ -117,15 +119,21 @@ A configuracao foi separada de proposito.
 - Postgres;
 - Redis;
 - `DATABASE_URL`;
-- `REDIS_URL`.
+- `REDIS_URL`;
+- politica de CORS da Core API.
 
 `core_api.infrastructure.platform_discovery.PlatformDiscoverySettings` possui valores usados pela pagina inicial da Core para descrever a plataforma local:
 
 - portas das APIs;
 - URLs publicas das APIs;
+- URLs internas das APIs;
 - paths de health/docs/ReDoc;
 - portas e URLs publicas do MkDocs;
 - timeout para checagem de disponibilidade.
+
+Cada API possui um pequeno `infrastructure/settings.py` para sua propria politica de CORS. APIs de produto (`core_api` e `auth_api`) aceitam as origens locais do frontend por padrao. APIs de plataforma nascem sem origem de browser, porque comunicacao backend-to-backend deve usar URLs internas e autenticacao de servico, nao CORS.
+
+URLs publicas sao para browser, documentacao e pessoas. URLs internas sao para chamada entre servicos. Em desenvolvimento bare metal as duas apontam para `localhost`; no Docker Compose as internas apontam para nomes de servico, como `http://auth-api:8000`.
 
 As variaveis Kafka continuam no `.env` e Docker Compose porque Kafka ainda faz parte do plano de plataforma. Quando `eventing_api` comecar a usar adapters Kafka de verdade, esses settings devem nascer em `eventing_api/infrastructure/settings.py`.
 
@@ -146,6 +154,7 @@ A suite cobre hoje:
 - contrato de health entre servicos;
 - contrato de erro entre servicos;
 - docs UI da Core API;
+- contratos de CORS das APIs;
 - registro de rotas da Core API;
 - estrutura vertical da livraria;
 - montagem de URLs por settings;
@@ -153,6 +162,20 @@ A suite cobre hoje:
 - mixins de banco;
 - helper de datetime compartilhado;
 - contrato de erro compartilhado.
+
+## Toolbox
+
+`toolbox/` guarda scripts uteis para desenvolvimento local e demos, mas que nao devem rodar como testes automatizados.
+
+Script atual:
+
+```bash
+make seed-core
+```
+
+Esse comando executa `toolbox/seeds/core_api/library_seed.py` e popula o banco da Core com dados mockados de livraria.
+
+A Auth API ja possui uma fronteira documentada em `toolbox/seeds/auth_api/`, mas ainda nao possui seed executavel porque a persistencia de Auth ainda nao foi implementada.
 
 ## Proximos passos sensatos
 

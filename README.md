@@ -45,6 +45,8 @@ make dev
 
 `make dev` is an alias for `make dev-core`, which runs Uvicorn with reload on port `8000`.
 
+Before the process starts, the Makefile checks the minimum local dependencies for that API. For `core_api`, this means a real connection test against Postgres and a Redis `PING`. If either dependency is unavailable, AtlasCore starts the required Docker Compose services and waits until they are ready.
+
 Open the Core API:
 
 - AtlasCore entry page: `http://localhost:8000/`
@@ -63,6 +65,17 @@ make dev-auth             # 8001
 make dev-eventing         # 8002
 make dev-notifications    # 8003
 make dev-observability    # 8004
+```
+
+Dependency checks can also be run directly:
+
+```bash
+make ensure-core          # Postgres + Redis
+make ensure-auth          # Postgres + Redis
+make ensure-eventing      # Postgres + Kafka
+make ensure-notifications # Redis
+make ensure-observability # Loki + Grafana
+make ensure-all
 ```
 
 Run production-like local processes with Gunicorn + UvicornWorker:
@@ -88,6 +101,14 @@ Run the `core_api` migrations:
 ```bash
 make migrate
 ```
+
+Seed the Core API library demo data:
+
+```bash
+make seed-core
+```
+
+Seeds and local operational scripts live in `toolbox/`. Automated tests stay in `tests/`.
 
 Run tests:
 
@@ -146,6 +167,13 @@ Important values:
 | `EVENTING_API_PUBLIC_URL` | `http://localhost:8002` |
 | `NOTIFICATION_API_PUBLIC_URL` | `http://localhost:8003` |
 | `OBSERVABILITY_API_PUBLIC_URL` | `http://localhost:8004` |
+| `CORE_API_INTERNAL_URL` | `http://localhost:8000` |
+| `AUTH_API_INTERNAL_URL` | `http://localhost:8001` |
+| `EVENTING_API_INTERNAL_URL` | `http://localhost:8002` |
+| `NOTIFICATION_API_INTERNAL_URL` | `http://localhost:8003` |
+| `OBSERVABILITY_API_INTERNAL_URL` | `http://localhost:8004` |
+| `CORE_API_CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:5173` |
+| `AUTH_API_CORS_ALLOWED_ORIGINS` | `http://localhost:3000,http://localhost:5173` |
 | `SERVICE_HEALTH_PATH` | `/health` |
 | `SERVICE_DOCS_PATH` | `/docs` |
 | `SERVICE_REDOC_PATH` | `/redoc` |
@@ -159,6 +187,10 @@ The Core API reads database/cache values through `core_api.infrastructure.settin
 
 The entry page reads local service URLs, ports and documentation links through `core_api.infrastructure.platform_discovery.platform_discovery_settings`.
 
+Public URLs are what browsers, docs and humans use. Internal URLs are what backend services use. In local bare metal development they both point to `localhost`; inside Docker Compose the internal URLs point to service names like `http://auth-api:8000`.
+
+Each API owns its CORS policy. CORS protects browser access only; backend-to-backend communication must be protected with service URLs, tokens and future internal authentication instead of relying on CORS.
+
 ## Shared Kernel Utilities
 
 Cross-service primitives live in `packages/shared_kernel`.
@@ -168,6 +200,7 @@ Current utilities:
 - `shared_kernel.time.DateTimeService` centralizes UTC-aware datetime creation, timezone conversion, formatting and range helpers.
 - `shared_kernel.errors.ApplicationError` and `ErrorTarget` define the shared error contract.
 - `shared_kernel.errors.register_exception_handlers` wires FastAPI handlers for every API.
+- `shared_kernel.http.apply_cors` wires FastAPI CORS middleware while keeping the policy owned by each API.
 
 The Core API database layer also keeps reusable SQLAlchemy mixins in `core_api.infrastructure.database.mixins`, so entities inherit timestamp and soft-delete behavior from one place.
 

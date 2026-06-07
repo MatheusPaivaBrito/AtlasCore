@@ -6,6 +6,7 @@ AtlasCore/
   packages/
   docs-site/
   tests/
+  toolbox/
   .env
   .env.example
   docker-compose.yml
@@ -23,6 +24,7 @@ AtlasCore/
 | `packages/` | Pacotes compartilhados pequenos. |
 | `docs-site/` | Documentação MkDocs em português e inglês. |
 | `tests/` | Testes por serviço e integração. |
+| `toolbox/` | Scripts operacionais locais, seeds e checks manuais. |
 | `.env` | Defaults locais para desenvolvimento. |
 | `.env.example` | Referência de variáveis para novas máquinas e CI. |
 | `docker-compose.yml` | Orquestra Postgres, Redis, profiles das APIs e serviços de plataforma. |
@@ -70,8 +72,8 @@ Pontos importantes:
 | `infrastructure/database/connection.py` | Engine, session factory e dependência FastAPI. |
 | `infrastructure/database/loader.py` | Importa models para o Alembic descobrir metadata. |
 | `infrastructure/database/mixins.py` | Comportamento ORM de timestamp e soft delete. |
-| `infrastructure/settings.py` | Settings da Core para identidade da app, Postgres e Redis. |
-| `infrastructure/platform_discovery.py` | Settings da landing page para portas, URLs publicas e links de docs. |
+| `infrastructure/settings.py` | Settings da Core para identidade da app, Postgres, Redis e CORS. |
+| `infrastructure/platform_discovery.py` | Settings da landing page para portas, URLs publicas/internas e links de docs. |
 | `shared/crud/route_factory.py` | Fábrica de CRUD convencional para recursos simples. |
 | `shared/exceptions.py` | Erros reutilizaveis especificos da Core. |
 | `modules/library/` | Primeiro domínio concreto com relações e CRUD. |
@@ -125,8 +127,11 @@ O helper concreto atual e:
 ```text
 shared_kernel/errors/application.py
 shared_kernel/errors/handlers.py
+shared_kernel/http/cors.py
 shared_kernel/time/datetime_service.py
 ```
+
+`shared_kernel/http/cors.py` centraliza o wiring do middleware FastAPI, mas cada API continua dona da propria politica de CORS por meio do seu settings local.
 
 Pastas futuras para IDs ou contratos de eventos so devem entrar quando existir codigo compartilhado real para elas.
 
@@ -153,6 +158,7 @@ tests/
   notification_api/
   observability_api/
   shared_kernel/
+  toolbox/
   integration/
   conftest.py
 ```

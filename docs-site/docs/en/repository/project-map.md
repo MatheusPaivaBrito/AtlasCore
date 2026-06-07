@@ -10,6 +10,7 @@ AtlasCore/
   packages/
   docs-site/
   tests/
+  toolbox/
   .env
   .env.example
   docker-compose.yml
@@ -34,6 +35,7 @@ AtlasCore/
 | `makefile` | Common command shortcuts: docs, tests, APIs, migrations and Compose profiles. |
 | `LICENSE` | Project license. Useful for completeness and public portfolio readiness. |
 | `.gitignore` | Prevents local/cache/build artifacts from entering git. |
+| `toolbox/` | Local operational scripts, seeds and manual checks. |
 
 ## `apps/`
 
@@ -78,8 +80,8 @@ Important pieces:
 | `infrastructure/database/connection.py` | Engine, session factory and FastAPI dependency. |
 | `infrastructure/database/loader.py` | Imports models for Alembic metadata discovery. |
 | `infrastructure/database/mixins.py` | Timestamp and soft-delete ORM behavior. |
-| `infrastructure/settings.py` | Core runtime settings for app identity, Postgres and Redis. |
-| `infrastructure/platform_discovery.py` | Landing-page settings for local service ports, public URLs and docs links. |
+| `infrastructure/settings.py` | Core runtime settings for app identity, Postgres, Redis and CORS. |
+| `infrastructure/platform_discovery.py` | Landing-page settings for local service ports, public/internal URLs and docs links. |
 | `shared/crud/route_factory.py` | Conventional CRUD route factory for simple resources. |
 | `shared/exceptions.py` | Core-specific reusable application errors. |
 | `modules/library/` | First concrete domain with relationships and CRUD routes. |
@@ -155,8 +157,11 @@ Current concrete primitive:
 ```text
 shared_kernel/errors/application.py
 shared_kernel/errors/handlers.py
+shared_kernel/http/cors.py
 shared_kernel/time/datetime_service.py
 ```
+
+`shared_kernel/http/cors.py` centralizes the FastAPI middleware wiring, but each API still owns its own CORS policy through its local settings file.
 
 Future folders for IDs or event contract primitives should be added only when real shared code exists.
 
@@ -183,6 +188,7 @@ tests/
   notification_api/
   observability_api/
   shared_kernel/
+  toolbox/
   integration/
   conftest.py
 ```

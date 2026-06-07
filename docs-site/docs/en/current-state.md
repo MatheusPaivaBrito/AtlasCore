@@ -30,6 +30,7 @@ AtlasCore/
     shared_kernel/
   docs-site/
   tests/
+  toolbox/
 ```
 
 Structural folders are not Python packages unless they expose importable code. Empty placeholders were removed; folders now exist because there is code or documentation behind them.
@@ -54,6 +55,7 @@ It has:
 - `public_assets` as a Core module for public images/documents;
 - SQLAlchemy timestamp and soft-delete mixins;
 - runtime settings separated between Core database/cache settings and platform discovery settings.
+- a toolbox seed for Core API mocked library data.
 
 ## Services
 
@@ -117,15 +119,21 @@ Configuration is intentionally split.
 - Postgres settings;
 - Redis settings;
 - `DATABASE_URL`;
-- `REDIS_URL`.
+- `REDIS_URL`;
+- Core API CORS policy.
 
 `core_api.infrastructure.platform_discovery.PlatformDiscoverySettings` owns values used by the Core landing page to describe the local platform:
 
 - API ports;
 - API public URLs;
+- API internal URLs;
 - health/docs/ReDoc paths;
 - MkDocs ports and public URLs;
 - service availability timeout.
+
+Each API owns a small `infrastructure/settings.py` file for its own CORS policy. Product APIs (`core_api` and `auth_api`) allow local frontend origins by default. Platform APIs start with no browser origins, because backend-to-backend communication should use internal URLs and service authentication, not CORS.
+
+Public URLs are for browsers, docs and humans. Internal URLs are for service-to-service calls. In bare metal development both point to `localhost`; in Docker Compose internal URLs point to Compose service names such as `http://auth-api:8000`.
 
 Kafka settings remain in `.env` and Docker Compose because Kafka is part of the platform plan. When `eventing_api` starts using Kafka adapters for real, those runtime settings should move into `eventing_api/infrastructure/settings.py`.
 
@@ -146,6 +154,7 @@ The test suite currently covers:
 - cross-service health contract;
 - cross-service error contract;
 - Core API docs UI;
+- API CORS contracts;
 - Core API route registration;
 - library vertical structure;
 - settings URL derivation and overrides;
@@ -153,6 +162,20 @@ The test suite currently covers:
 - database mixins;
 - shared datetime helper;
 - shared error contracts.
+
+## Toolbox
+
+`toolbox/` stores scripts that are useful for local development and demos but should not run as automated tests.
+
+Current script:
+
+```bash
+make seed-core
+```
+
+This runs `toolbox/seeds/core_api/library_seed.py` and populates the Core database with mocked library data.
+
+Auth API has a documented seed boundary under `toolbox/seeds/auth_api/`, but no executable seed yet because Auth persistence is not implemented.
 
 ## Next Sensible Steps
 

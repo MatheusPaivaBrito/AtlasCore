@@ -52,6 +52,7 @@ nav:
       - Anatomia de uma API: repositorio/anatomia-api.md
       - Anatomia de Módulo: repositorio/anatomia-modulo.md
       - Shared Kernel: repositorio/shared-kernel.md
+      - Toolbox: repositorio/toolbox.md
   - Arquitetura:
       - Visão Arquitetural: arquitetura/visao-geral.md
       - Catálogo de Serviços: arquitetura/catalogo-servicos.md

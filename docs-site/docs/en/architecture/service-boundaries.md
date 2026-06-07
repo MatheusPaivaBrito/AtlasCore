@@ -23,3 +23,27 @@ Product APIs are closer to user/product behavior.
 Platform APIs are closer to operational/internal capabilities.
 
 This distinction makes the project large enough to impress, but still explainable.
+
+## Browser vs Service Communication
+
+AtlasCore separates three ideas:
+
+| Concept | Meaning |
+| --- | --- |
+| Public URL | Address used by browsers, docs and humans. |
+| Internal URL | Address used by one backend to call another backend. |
+| Infrastructure URL | Address used for Postgres, Redis, Kafka, Loki and similar tools. |
+
+In bare metal development, public and internal API URLs usually point to `localhost` ports. In Docker Compose, internal URLs point to service names such as `http://core-api:8000`.
+
+CORS belongs to browser communication only. It does not protect backend-to-backend calls. Each API owns its own CORS policy:
+
+| API | Default Browser Access |
+| --- | --- |
+| `core_api` | Local frontend origins are allowed. |
+| `auth_api` | Local frontend origins are allowed. |
+| `eventing_api` | No browser origins by default. |
+| `notification_api` | No browser origins by default. |
+| `observability_api` | No browser origins by default. |
+
+Backend-to-backend communication should use internal URLs plus explicit service authentication in the future.

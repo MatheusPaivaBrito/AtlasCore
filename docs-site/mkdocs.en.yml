@@ -52,6 +52,7 @@ nav:
       - Application Anatomy: repository/application-anatomy.md
       - Module Anatomy: repository/module-anatomy.md
       - Shared Kernel: repository/shared-kernel.md
+      - Toolbox: repository/toolbox.md
   - Architecture:
       - Architecture Overview: architecture/overview.md
       - Service Catalog: architecture/service-catalog.md
