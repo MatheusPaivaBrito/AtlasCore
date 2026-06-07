@@ -1,8 +1,15 @@
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+SETTINGS_CONFIG = SettingsConfigDict(
+    env_file=".env",
+    env_file_encoding="utf-8",
+    extra="ignore",
+    populate_by_name=True,
+)
 
-class Settings(BaseSettings):
+
+class CoreSettings(BaseSettings):
     # ------------------------------------
     # APP
     # ------------------------------------
@@ -53,53 +60,9 @@ class Settings(BaseSettings):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
     # ------------------------------------
-    # API PORTS
-    # ------------------------------------
-    CORE_API_PORT: int = 8000
-    AUTH_API_PORT: int = 8001
-    EVENTING_API_PORT: int = 8002
-    NOTIFICATION_API_PORT: int = 8003
-    OBSERVABILITY_API_PORT: int = 8004
-
-    # ------------------------------------
-    # AUTH API DISCOVERY
-    # ------------------------------------
-    AUTH_API_PUBLIC_URL: str = "http://localhost:8001"
-    AUTH_API_HEALTH_PATH: str = "/health"
-    AUTH_API_DOCS_PATH: str = "/docs"
-    AUTH_API_CHECK_TIMEOUT_SECONDS: float = 0.2
-
-    # ------------------------------------
-    # KAFKA
-    # ------------------------------------
-    KAFKA_HOST: str = "localhost"
-    KAFKA_PORT: int = 9092
-    KAFKA_BOOTSTRAP_SERVERS_OVERRIDE: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("KAFKA_BOOTSTRAP_SERVERS", "KAFKA_BOOTSTRAP_SERVERS_OVERRIDE"),
-    )
-
-    @property
-    def KAFKA_BOOTSTRAP_SERVERS(self) -> str:
-        if self.KAFKA_BOOTSTRAP_SERVERS_OVERRIDE:
-            return self.KAFKA_BOOTSTRAP_SERVERS_OVERRIDE
-        return f"{self.KAFKA_HOST}:{self.KAFKA_PORT}"
-
-    # ------------------------------------
-    # DOCUMENTATION
-    # ------------------------------------
-    DOCS_PT_PORT: int = 8080
-    DOCS_EN_PORT: int = 8081
-
-    # ------------------------------------
     # PYDANTIC
     # ------------------------------------
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
-        populate_by_name=True,
-    )
+    model_config = SETTINGS_CONFIG
 
 
-settings = Settings()
+settings = CoreSettings()

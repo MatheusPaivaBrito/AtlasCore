@@ -1,8 +1,9 @@
-from core_api.infrastructure.settings import Settings
+from core_api.infrastructure.platform_discovery import PlatformDiscoverySettings
+from core_api.infrastructure.settings import CoreSettings
 
 
 def test_settings_builds_connection_values_from_env_parts() -> None:
-    settings = Settings(
+    settings = CoreSettings(
         APP_DEBUG=False,
         POSTGRES_USER="atlas",
         POSTGRES_PASSWORD="secret",
@@ -12,23 +13,38 @@ def test_settings_builds_connection_values_from_env_parts() -> None:
         REDIS_HOST="redis",
         REDIS_PORT=6380,
         REDIS_DB=2,
-        KAFKA_HOST="kafka",
-        KAFKA_PORT=9094,
     )
 
     assert settings.DEBUG is False
     assert settings.DATABASE_URL == "postgresql+psycopg://atlas:secret@postgres:5433/atlas_test"
     assert settings.REDIS_URL == "redis://redis:6380/2"
-    assert settings.KAFKA_BOOTSTRAP_SERVERS == "kafka:9094"
 
 
 def test_settings_allow_connection_url_overrides() -> None:
-    settings = Settings(
+    settings = CoreSettings(
         DATABASE_URL_OVERRIDE="postgresql+psycopg://override:secret@db:5432/app",
         REDIS_URL_OVERRIDE="redis://cache:6379/4",
-        KAFKA_BOOTSTRAP_SERVERS_OVERRIDE="broker:9092",
     )
 
     assert settings.DATABASE_URL == "postgresql+psycopg://override:secret@db:5432/app"
     assert settings.REDIS_URL == "redis://cache:6379/4"
-    assert settings.KAFKA_BOOTSTRAP_SERVERS == "broker:9092"
+
+
+def test_platform_discovery_settings_describe_local_service_urls() -> None:
+    settings = PlatformDiscoverySettings(
+        APP_NAME="AtlasCore Test",
+        CORE_API_PORT=9000,
+        AUTH_API_PORT=9001,
+        AUTH_API_PUBLIC_URL="http://auth.local",
+        DOCS_PT_PORT=9080,
+        DOCS_EN_PUBLIC_URL_OVERRIDE="http://docs.local/en",
+        AUTH_API_CHECK_TIMEOUT_SECONDS=0.5,
+    )
+
+    assert settings.APP_NAME == "AtlasCore Test"
+    assert settings.CORE_API_PORT == 9000
+    assert settings.AUTH_API_PORT == 9001
+    assert settings.AUTH_API_PUBLIC_URL == "http://auth.local"
+    assert settings.DOCS_PT_PUBLIC_URL == "http://localhost:9080"
+    assert settings.DOCS_EN_PUBLIC_URL == "http://docs.local/en"
+    assert settings.SERVICE_CHECK_TIMEOUT_SECONDS == 0.5
