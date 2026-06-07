@@ -4,7 +4,7 @@ from core_api.modules.library.domains.rentals.rental_schema import (
     BookRentalRead,
     BookRentalUpdate,
 )
-from core_api.shared.crud import create_crud_router
+from core_api.shared.crud.route_factory import create_crud_router
 
 router = create_crud_router(
     model=BookRentalEntity,

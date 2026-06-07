@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from core_api.modules.library.domains.shared import ReadSchema
+from core_api.modules.library.domains.shared.read_schema import ReadSchema
 
 
 class BookCreate(BaseModel):

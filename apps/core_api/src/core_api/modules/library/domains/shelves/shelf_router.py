@@ -1,6 +1,6 @@
 from core_api.modules.library.domains.shelves.shelf_entity import ShelfEntity
 from core_api.modules.library.domains.shelves.shelf_schema import ShelfCreate, ShelfRead, ShelfUpdate
-from core_api.shared.crud import create_crud_router
+from core_api.shared.crud.route_factory import create_crud_router
 
 router = create_crud_router(
     model=ShelfEntity,

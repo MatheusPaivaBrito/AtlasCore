@@ -4,7 +4,7 @@ from core_api.modules.library.domains.sections.section_schema import (
     ShelfSectionRead,
     ShelfSectionUpdate,
 )
-from core_api.shared.crud import create_crud_router
+from core_api.shared.crud.route_factory import create_crud_router
 
 router = create_crud_router(
     model=ShelfSectionEntity,

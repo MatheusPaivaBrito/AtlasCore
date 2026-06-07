@@ -1,6 +1,6 @@
 from core_api.modules.library.domains.books.book_entity import BookEntity
 from core_api.modules.library.domains.books.book_schema import BookCreate, BookRead, BookUpdate
-from core_api.shared.crud import create_crud_router
+from core_api.shared.crud.route_factory import create_crud_router
 
 router = create_crud_router(
     model=BookEntity,

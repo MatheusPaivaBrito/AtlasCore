@@ -15,7 +15,7 @@ from core_api.modules.library.domains.sections.section_schema import (
     ShelfSectionRead,
     ShelfSectionUpdate,
 )
-from core_api.modules.library.domains.shared import ReadSchema
+from core_api.modules.library.domains.shared.read_schema import ReadSchema
 from core_api.modules.library.domains.shelves.shelf_schema import ShelfCreate, ShelfRead, ShelfUpdate
 
 ReadModel = ReadSchema
