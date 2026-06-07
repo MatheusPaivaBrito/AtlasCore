@@ -6,11 +6,17 @@ from sqlalchemy.orm import Session, sessionmaker
 from core_api.infrastructure.settings import settings
 
 
+# ------------------------------------
+# ENGINE
+# ------------------------------------
 engine = create_engine(
     settings.DATABASE_URL,
     pool_pre_ping=True,
 )
 
+# ------------------------------------
+# SESSION FACTORY
+# ------------------------------------
 SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
@@ -19,6 +25,9 @@ SessionLocal = sessionmaker(
 )
 
 
+# ------------------------------------
+# FASTAPI DEPENDENCY
+# ------------------------------------
 def get_session() -> Generator[Session, None, None]:
     session = SessionLocal()
     try:
