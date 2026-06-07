@@ -1,13 +1,19 @@
 from typing import Any, TypeVar
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel
 from sqlalchemy import String, cast, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from core_api.infrastructure.database.connection import get_session
+from core_api.shared.exceptions import (
+    CoreInvalidFilterValueError,
+    CoreResourceConflictError,
+    CoreResourceNotFoundError,
+    CoreUnsupportedFilterError,
+)
 from shared_kernel.time import DateTimeService
 
 ModelT = TypeVar("ModelT")
@@ -39,18 +45,12 @@ def create_crud_router(
     command_tags = [command_tag or f"{fallback_tag}: command"]
     has_soft_delete = hasattr(model, "deleted_at")
 
-    def _not_found() -> HTTPException:
-        return HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"{resource_name} resource was not found",
-        )
-
     def _load(session: Session, resource_id: UUID, *, include_deleted: bool = False) -> ModelT:
         instance = session.get(model, resource_id)
         if instance is None:
-            raise _not_found()
+            raise CoreResourceNotFoundError(entity=resource_name, resource_id=resource_id)
         if has_soft_delete and not include_deleted and getattr(instance, "deleted_at") is not None:
-            raise _not_found()
+            raise CoreResourceNotFoundError(entity=resource_name, resource_id=resource_id)
         return instance
 
     def _persist(session: Session, instance: ModelT) -> ModelT:
@@ -60,19 +60,13 @@ def create_crud_router(
             session.refresh(instance)
         except IntegrityError as exc:
             session.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"{resource_name} resource conflicts with existing data",
-            ) from exc
+            raise CoreResourceConflictError(entity=resource_name) from exc
         return instance
 
     def _column(field_name: str) -> Any:
         column = getattr(model, field_name, None)
         if column is None:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"Unsupported filter field: {field_name}",
-            )
+            raise CoreUnsupportedFilterError(entity=resource_name, field=field_name)
         return column
 
     def _coerce_filter_value(field_name: str, raw_value: str) -> Any:
@@ -86,17 +80,21 @@ def create_crud_router(
             try:
                 return UUID(raw_value)
             except ValueError as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Invalid UUID for filter field: {field_name}",
+                raise CoreInvalidFilterValueError(
+                    entity=resource_name,
+                    field=field_name,
+                    expected_type="UUID",
+                    value=raw_value,
                 ) from exc
         if python_type is int:
             try:
                 return int(raw_value)
             except ValueError as exc:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Invalid integer for filter field: {field_name}",
+                raise CoreInvalidFilterValueError(
+                    entity=resource_name,
+                    field=field_name,
+                    expected_type="integer",
+                    value=raw_value,
                 ) from exc
         return raw_value
 

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from core_api.bootstrap.exceptions import register_api_exception_handlers
 from core_api.bootstrap.routes import register_routes
 
 OPENAPI_TAGS = [
@@ -85,5 +86,6 @@ def create_app() -> FastAPI:
         },
         openapi_tags=OPENAPI_TAGS,
     )
+    register_api_exception_handlers(app)
     register_routes(app)
     return app
