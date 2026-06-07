@@ -49,12 +49,15 @@ _SWAGGER_HTML = """
     <style>
       :root {
         color-scheme: dark;
-        --background: #080c14;
-        --surface: #101827;
-        --surface-soft: #162033;
-        --border: #2a3850;
-        --text: #e7edf6;
-        --muted: #9aa8bd;
+        --background: #0b1019;
+        --surface: #121b2b;
+        --surface-soft: #172235;
+        --surface-raised: #1b2840;
+        --code-bg: #0f1726;
+        --code-bg-soft: #111c2d;
+        --border: #314158;
+        --text: #e6edf7;
+        --muted: #a9b6c8;
         --accent: #58c4dc;
         --green: #56d364;
         --blue: #58a6ff;
@@ -66,6 +69,13 @@ _SWAGGER_HTML = """
       body {
         margin: 0;
         background: var(--background);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      .swagger-ui * {
+        text-shadow: none !important;
+        -webkit-text-stroke: 0 transparent;
       }
 
       .swagger-ui,
@@ -127,7 +137,7 @@ _SWAGGER_HTML = """
       .swagger-ui textarea {
         border: 1px solid var(--border);
         border-radius: 8px;
-        background: #0b1220;
+        background: var(--code-bg);
         color: var(--text);
       }
 
@@ -205,16 +215,75 @@ _SWAGGER_HTML = """
       .swagger-ui .execute-wrapper .btn {
         border-color: var(--accent);
         border-radius: 8px;
-        background: #123142;
+        background: #143448;
         color: #ecfeff;
         box-shadow: none;
       }
 
+      .swagger-ui .responses-inner h4,
+      .swagger-ui .responses-inner h5,
+      .swagger-ui .response-col_description__inner,
+      .swagger-ui .response-col_description__inner p,
+      .swagger-ui .response-col_description__inner span,
+      .swagger-ui .response-control-media-type__title,
+      .swagger-ui .content-type-wrapper,
+      .swagger-ui .copy-to-clipboard,
+      .swagger-ui .download-contents,
+      .swagger-ui .tab li button {
+        color: var(--text);
+      }
+
+      .swagger-ui .tab li button {
+        border-radius: 6px;
+        background: var(--surface-raised);
+        box-shadow: none;
+      }
+
+      .swagger-ui .tab li button.tablinks.active {
+        background: #e4ebf5;
+        color: #1f9d55;
+      }
+
+      .swagger-ui .responses-table,
+      .swagger-ui .responses-wrapper,
+      .swagger-ui .responses-inner {
+        background: var(--surface);
+      }
+
+      .swagger-ui .highlight-code,
+      .swagger-ui .highlight-code > .microlight,
+      .swagger-ui .microlight,
+      .swagger-ui .body-param__example,
+      .swagger-ui .example {
+        border-radius: 8px;
+        background: var(--code-bg) !important;
+        color: var(--text) !important;
+      }
+
+      .swagger-ui .highlight-code {
+        border: 1px solid var(--border);
+        overflow: hidden;
+      }
+
+      .swagger-ui .highlight-code > .microlight,
+      .swagger-ui .microlight {
+        padding: 18px 20px;
+        line-height: 1.65;
+      }
+
       .swagger-ui code,
       .swagger-ui pre,
-      .swagger-ui .highlight-code {
-        background: #070b12;
+      .swagger-ui .highlight-code code,
+      .swagger-ui .highlight-code pre {
+        background: var(--code-bg);
         color: var(--text);
+        font-weight: 500;
+      }
+
+      .swagger-ui .microlight .token.string,
+      .swagger-ui .microlight .token.number,
+      .swagger-ui .microlight .token.boolean {
+        color: #85e89d !important;
       }
     </style>
   </head>
@@ -261,7 +330,7 @@ _REDOC_HTML = """
 
       body {
         margin: 0;
-        background: #080c14;
+        background: #0b1019;
       }
 
       redoc,
@@ -317,14 +386,14 @@ _REDOC_HTML = """
                   delete: "#ff7b72"
                 }
               },
-              rightPanel: { backgroundColor: "#070b12", textColor: "#e7edf6" },
-              sidebar: { backgroundColor: "#0d1524", textColor: "#e7edf6" },
+              rightPanel: { backgroundColor: "#111c2d", textColor: "#e6edf7" },
+              sidebar: { backgroundColor: "#121b2b", textColor: "#e6edf7" },
               typography: {
                 fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
                 code: {
                   fontFamily: "SFMono-Regular, Consolas, Liberation Mono, monospace",
-                  backgroundColor: "#101827",
-                  color: "#e7edf6"
+                  backgroundColor: "#172235",
+                  color: "#e6edf7"
                 }
               }
             }
