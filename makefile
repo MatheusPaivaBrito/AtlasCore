@@ -14,6 +14,7 @@ COMPOSE = docker compose
 CORE_ALEMBIC = apps/core_api/alembic.ini
 DOCS_PT = docs-site/mkdocs.pt-br.yml
 DOCS_EN = docs-site/mkdocs.en.yml
+ENSURE_RUNTIME = poetry run python toolbox/checks/ensure_runtime_dependencies.py
 
 # ------------------------------------
 # RUNTIME
@@ -53,9 +54,10 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 .PHONY: help makehelp \
 	compose compose-dev compose-apis compose-platform compose-core compose-auth \
 	compose-eventing compose-notifications compose-observability up infra down logs ps build \
+	ensure ensure-all ensure-core ensure-auth ensure-eventing ensure-notifications ensure-observability \
 	dev dev-all dev-core dev-auth dev-eventing dev-notifications dev-observability \
 	prod prod-all prod-core prod-auth prod-eventing prod-notifications prod-observability \
-	migrate revision docs docs-pt docs-en docs-all test
+	migrate revision seed seed-core docs docs-pt docs-en docs-all test
 
 # ------------------------------------
 # HELP
@@ -78,6 +80,15 @@ help makehelp:
 	@echo "  make logs                 Follow Compose logs"
 	@echo "  make ps                   List Compose services"
 	@echo ""
+	@echo "Runtime Dependency Checks"
+	@echo "  make ensure               Ensure core_api dependencies are ready"
+	@echo "  make ensure-all           Ensure dependencies for every local API"
+	@echo "  make ensure-core          Ensure Postgres and Redis"
+	@echo "  make ensure-auth          Ensure Auth dependencies"
+	@echo "  make ensure-eventing      Ensure Postgres and Kafka"
+	@echo "  make ensure-notifications Ensure Redis"
+	@echo "  make ensure-observability Ensure Loki and Grafana"
+	@echo ""
 	@echo "Local Development"
 	@echo "  make dev                  Run core_api locally on port $(CORE_API_PORT)"
 	@echo "  make dev-all              Run every API locally with uvicorn reload"
@@ -96,6 +107,10 @@ help makehelp:
 	@echo "Database"
 	@echo "  make migrate              Run core_api Alembic migrations"
 	@echo "  make revision name=...    Create a core_api Alembic revision"
+	@echo "  make seed-core            Seed core_api library data"
+	@echo ""
+	@echo "Toolbox"
+	@echo "  make seed                 Alias for make seed-core"
 	@echo ""
 	@echo "Docs and Tests"
 	@echo "  make docs                 Serve PT-BR docs at http://127.0.0.1:$(DOCS_PT_PORT)"
@@ -146,14 +161,38 @@ build:
 	$(COMPOSE) --profile dev build
 
 # ------------------------------------
+# RUNTIME DEPENDENCY CHECKS
+# ------------------------------------
+ensure: ensure-core
+
+ensure-all:
+	@$(ENSURE_RUNTIME) all --env-file $(ENV_FILE)
+
+ensure-core:
+	@$(ENSURE_RUNTIME) core_api --env-file $(ENV_FILE)
+
+ensure-auth:
+	@$(ENSURE_RUNTIME) auth_api --env-file $(ENV_FILE)
+
+ensure-eventing:
+	@$(ENSURE_RUNTIME) eventing_api --env-file $(ENV_FILE)
+
+ensure-notifications:
+	@$(ENSURE_RUNTIME) notification_api --env-file $(ENV_FILE)
+
+ensure-observability:
+	@$(ENSURE_RUNTIME) observability_api --env-file $(ENV_FILE)
+
+# ------------------------------------
 # LOCAL DEVELOPMENT
 # ------------------------------------
 dev: dev-core
 
 dev-all:
-	$(MAKE) -j5 dev-core dev-auth dev-eventing dev-notifications dev-observability
+	@$(ENSURE_RUNTIME) all --env-file $(ENV_FILE)
+	ATLAS_SKIP_INFRA_ENSURE=1 $(MAKE) -j5 dev-core dev-auth dev-eventing dev-notifications dev-observability
 
-dev-core:
+dev-core: ensure-core
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(CORE_PYTHONPATH) \
 	poetry run uvicorn core_api.main:app \
@@ -161,7 +200,7 @@ dev-core:
 		--port $(CORE_API_PORT) \
 		--reload
 
-dev-auth:
+dev-auth: ensure-auth
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(AUTH_PYTHONPATH) \
 	poetry run uvicorn auth_api.main:app \
@@ -169,7 +208,7 @@ dev-auth:
 		--port $(AUTH_API_PORT) \
 		--reload
 
-dev-eventing:
+dev-eventing: ensure-eventing
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(EVENTING_PYTHONPATH) \
 	poetry run uvicorn eventing_api.main:app \
@@ -177,7 +216,7 @@ dev-eventing:
 		--port $(EVENTING_API_PORT) \
 		--reload
 
-dev-notifications:
+dev-notifications: ensure-notifications
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(NOTIFICATION_PYTHONPATH) \
 	poetry run uvicorn notification_api.main:app \
@@ -185,7 +224,7 @@ dev-notifications:
 		--port $(NOTIFICATION_API_PORT) \
 		--reload
 
-dev-observability:
+dev-observability: ensure-observability
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(OBSERVABILITY_PYTHONPATH) \
 	poetry run uvicorn observability_api.main:app \
@@ -199,9 +238,10 @@ dev-observability:
 prod: prod-core
 
 prod-all:
-	$(MAKE) -j5 prod-core prod-auth prod-eventing prod-notifications prod-observability
+	@$(ENSURE_RUNTIME) all --env-file $(ENV_FILE)
+	ATLAS_SKIP_INFRA_ENSURE=1 $(MAKE) -j5 prod-core prod-auth prod-eventing prod-notifications prod-observability
 
-prod-core:
+prod-core: ensure-core
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(CORE_PYTHONPATH) \
 	poetry run gunicorn core_api.main:app \
@@ -211,7 +251,7 @@ prod-core:
 		--access-logfile - \
 		--error-logfile -
 
-prod-auth:
+prod-auth: ensure-auth
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(AUTH_PYTHONPATH) \
 	poetry run gunicorn auth_api.main:app \
@@ -221,7 +261,7 @@ prod-auth:
 		--access-logfile - \
 		--error-logfile -
 
-prod-eventing:
+prod-eventing: ensure-eventing
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(EVENTING_PYTHONPATH) \
 	poetry run gunicorn eventing_api.main:app \
@@ -231,7 +271,7 @@ prod-eventing:
 		--access-logfile - \
 		--error-logfile -
 
-prod-notifications:
+prod-notifications: ensure-notifications
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(NOTIFICATION_PYTHONPATH) \
 	poetry run gunicorn notification_api.main:app \
@@ -241,7 +281,7 @@ prod-notifications:
 		--access-logfile - \
 		--error-logfile -
 
-prod-observability:
+prod-observability: ensure-observability
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(OBSERVABILITY_PYTHONPATH) \
 	poetry run gunicorn observability_api.main:app \
@@ -259,6 +299,13 @@ migrate:
 
 revision:
 	PYTHONPATH=$(CORE_PYTHONPATH) poetry run alembic -c $(CORE_ALEMBIC) revision --autogenerate -m "$(name)"
+
+seed: seed-core
+
+seed-core:
+	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(CORE_PYTHONPATH) \
+	poetry run python toolbox/seeds/core_api/library_seed.py
 
 # ------------------------------------
 # DOCS AND TESTS
