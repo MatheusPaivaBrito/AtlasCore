@@ -1,9 +1,18 @@
 from datetime import datetime
+from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from shared_kernel.time import DateTimeService
+
+
+class UuidPrimaryKeyMixin:
+    id: Mapped[UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid4,
+    )
 
 
 class TimestampMixin:
