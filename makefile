@@ -57,7 +57,8 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 # ------------------------------------
 # PHONY TARGETS
 # ------------------------------------
-.PHONY: help makehelp \
+.PHONY: help makehelp help-index help-all help-compose help-core help-auth help-eventing \
+	help-notifications help-observability help-db help-docs \
 	compose compose-dev compose-apis compose-platform compose-core compose-auth \
 	compose-eventing compose-notifications compose-observability up infra down logs ps build \
 	ensure ensure-all ensure-core ensure-auth ensure-eventing ensure-notifications ensure-observability \
@@ -69,72 +70,151 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 	docs docs-pt docs-en docs-all test
 
 # ------------------------------------
-# HELP
+# HELP PAGES
 # ------------------------------------
-help makehelp:
-	@echo "AtlasCore commands"
+help makehelp: help-index
+
+help-index:
+	@echo "AtlasCore command pages"
 	@echo ""
-	@echo "Environment"
-	@echo "  make help                 Show this command menu"
-	@echo "  make makehelp             Alias for make help"
+	@echo "Start here"
+	@echo "  make help                 Show this index"
+	@echo "  make help-all             Show every command page"
 	@echo ""
-	@echo "Docker Compose / Infrastructure"
-	@echo "  make compose              Start default services: Postgres and Redis"
-	@echo "  make compose-dev          Start dev runtime containers"
-	@echo "  make compose-apis         Start API containers"
-	@echo "  make compose-platform     Start platform containers"
-	@echo "  make compose-core         Start core_api container with infra"
-	@echo "  make compose-auth         Start auth_api container with infra"
+	@echo "Pages"
+	@echo "  make help-compose         Docker Compose and shared infrastructure"
+	@echo "  make help-core            Core API: catalog CRUD, migrations and seed"
+	@echo "  make help-auth            Auth API: users, sessions, migrations and seed"
+	@echo "  make help-eventing        Eventing API and Kafka runtime"
+	@echo "  make help-notifications   Notification API runtime"
+	@echo "  make help-observability   Observability API runtime"
+	@echo "  make help-db              Database jobs for all APIs"
+	@echo "  make help-docs            Documentation and tests"
+
+help-all:
+	@$(MAKE) --no-print-directory help-compose
+	@echo ""
+	@$(MAKE) --no-print-directory help-core
+	@echo ""
+	@$(MAKE) --no-print-directory help-auth
+	@echo ""
+	@$(MAKE) --no-print-directory help-eventing
+	@echo ""
+	@$(MAKE) --no-print-directory help-notifications
+	@echo ""
+	@$(MAKE) --no-print-directory help-observability
+	@echo ""
+	@$(MAKE) --no-print-directory help-db
+	@echo ""
+	@$(MAKE) --no-print-directory help-docs
+
+help-compose:
+	@echo "AtlasCore / Compose"
+	@echo ""
+	@echo "Shared infrastructure"
+	@echo "  make compose              Start default infra: Postgres and Redis"
+	@echo "  make up                   Alias for make compose"
+	@echo "  make infra                Alias for make compose"
 	@echo "  make down                 Stop Compose services"
 	@echo "  make logs                 Follow Compose logs"
 	@echo "  make ps                   List Compose services"
+	@echo "  make build                Build dev-profile images"
 	@echo ""
-	@echo "Runtime Dependency Checks"
-	@echo "  make ensure               Ensure core_api dependencies are ready"
-	@echo "  make ensure-all           Ensure dependencies for every local API"
-	@echo "  make ensure-core          Ensure Postgres and Redis"
-	@echo "  make ensure-auth          Ensure Auth dependencies"
-	@echo "  make ensure-eventing      Ensure Postgres and Kafka"
-	@echo "  make ensure-notifications Ensure Redis"
-	@echo "  make ensure-observability Ensure Loki and Grafana"
+	@echo "Grouped runtime"
+	@echo "  make compose-dev          Start dev profile services"
+	@echo "  make compose-apis         Start all API containers"
+	@echo "  make compose-platform     Start platform services"
+
+help-core:
+	@echo "AtlasCore / Core API"
 	@echo ""
-	@echo "Local API Development"
+	@echo "Runtime"
+	@echo "  make ensure-core          Ensure Postgres and Redis are ready"
 	@echo "  make dev                  Run core_api locally on port $(CORE_API_PORT)"
-	@echo "  make dev-all              Run every API locally with uvicorn reload"
 	@echo "  make dev-core             Run core_api locally on port $(CORE_API_PORT)"
-	@echo "  make dev-auth             Run auth_api locally on port $(AUTH_API_PORT)"
-	@echo "  make dev-eventing         Run eventing_api locally on port $(EVENTING_API_PORT)"
-	@echo "  make dev-notifications    Run notification_api locally on port $(NOTIFICATION_API_PORT)"
-	@echo "  make dev-observability    Run observability_api locally on port $(OBSERVABILITY_API_PORT)"
-	@echo ""
-	@echo "Local Production-Like Runtime"
 	@echo "  make prod                 Run core_api with gunicorn on port $(CORE_API_PORT)"
-	@echo "  make prod-all             Run every API with gunicorn"
 	@echo "  make prod-core            Run core_api with gunicorn on port $(CORE_API_PORT)"
-	@echo "  make prod-auth            Run auth_api with gunicorn on port $(AUTH_API_PORT)"
+	@echo "  make compose-core         Start core_api container with infra"
 	@echo ""
-	@echo "Database Jobs / Docker Compose"
+	@echo "Database"
+	@echo "  make migrate-core         Run core_api migrations in a one-off container"
+	@echo "  make migrate-core-local   Run core_api migrations locally with Poetry"
+	@echo "  make seed-core            Migrate and seed core_api data in a one-off container"
+	@echo "  make seed-core-local      Seed core_api data locally with Poetry"
+	@echo "  make revision name=...    Create a core_api Alembic revision locally"
+
+help-auth:
+	@echo "AtlasCore / Auth API"
+	@echo ""
+	@echo "Runtime"
+	@echo "  make ensure-auth          Ensure Auth dependencies are ready"
+	@echo "  make dev-auth             Run auth_api locally on port $(AUTH_API_PORT)"
+	@echo "  make prod-auth            Run auth_api with gunicorn on port $(AUTH_API_PORT)"
+	@echo "  make compose-auth         Start auth_api container with infra"
+	@echo ""
+	@echo "Database"
+	@echo "  make migrate-auth         Run auth_api migrations in a one-off container"
+	@echo "  make migrate-auth-local   Run auth_api migrations locally with Poetry"
+	@echo "  make seed-auth            Migrate and seed auth_api users in a one-off container"
+	@echo "  make seed-auth-local      Seed auth_api users locally with Poetry"
+	@echo "  make revision-auth name=...  Create an auth_api Alembic revision"
+
+help-eventing:
+	@echo "AtlasCore / Eventing API"
+	@echo ""
+	@echo "Runtime"
+	@echo "  make ensure-eventing      Ensure Postgres and Kafka are ready"
+	@echo "  make dev-eventing         Run eventing_api locally on port $(EVENTING_API_PORT)"
+	@echo "  make prod-eventing        Run eventing_api with gunicorn on port $(EVENTING_API_PORT)"
+	@echo "  make compose-eventing     Start eventing_api container with Kafka"
+
+help-notifications:
+	@echo "AtlasCore / Notification API"
+	@echo ""
+	@echo "Runtime"
+	@echo "  make ensure-notifications Ensure Redis is ready"
+	@echo "  make dev-notifications    Run notification_api locally on port $(NOTIFICATION_API_PORT)"
+	@echo "  make prod-notifications   Run notification_api with gunicorn on port $(NOTIFICATION_API_PORT)"
+	@echo "  make compose-notifications  Start notification_api container with Redis"
+
+help-observability:
+	@echo "AtlasCore / Observability API"
+	@echo ""
+	@echo "Runtime"
+	@echo "  make ensure-observability Ensure Loki and Grafana are ready"
+	@echo "  make dev-observability    Run observability_api locally on port $(OBSERVABILITY_API_PORT)"
+	@echo "  make prod-observability   Run observability_api with gunicorn on port $(OBSERVABILITY_API_PORT)"
+	@echo "  make compose-observability  Start observability_api container with Loki and Grafana"
+
+help-db:
+	@echo "AtlasCore / Database Jobs"
+	@echo ""
+	@echo "Docker Compose jobs"
 	@echo "  make migrate              Run all API migrations in one-off containers"
 	@echo "  make migrate-core         Run core_api migrations in a one-off container"
 	@echo "  make migrate-auth         Run auth_api migrations in a one-off container"
 	@echo "  make seed                 Run all available seeds in one-off containers"
 	@echo "  make seed-core            Migrate and seed core_api data in a one-off container"
-	@echo "  make seed-auth            Migrate and seed auth_api data in a one-off container"
+	@echo "  make seed-auth            Migrate and seed auth_api users in a one-off container"
 	@echo ""
-	@echo "Database / Local Poetry"
+	@echo "Local Poetry jobs"
 	@echo "  make migrate-local        Run all API migrations locally with Poetry"
 	@echo "  make migrate-core-local   Run core_api migrations locally with Poetry"
 	@echo "  make migrate-auth-local   Run auth_api migrations locally with Poetry"
 	@echo "  make seed-local           Run all seeds locally with Poetry"
 	@echo "  make seed-core-local      Seed core_api data locally with Poetry"
 	@echo "  make seed-auth-local      Seed auth_api users locally with Poetry"
-	@echo "  make revision name=...    Create a core_api Alembic revision locally"
-	@echo "  make revision-auth name=... Create an auth_api Alembic revision"
+
+help-docs:
+	@echo "AtlasCore / Docs and Tests"
 	@echo ""
-	@echo "Docs and Tests"
+	@echo "Documentation"
 	@echo "  make docs                 Serve PT-BR docs at http://127.0.0.1:$(DOCS_PT_PORT)"
+	@echo "  make docs-pt              Alias for make docs"
 	@echo "  make docs-en              Serve English docs at http://127.0.0.1:$(DOCS_EN_PORT)"
 	@echo "  make docs-all             Build both docs sites"
+	@echo ""
+	@echo "Quality"
 	@echo "  make test                 Run pytest"
 
 # ------------------------------------
