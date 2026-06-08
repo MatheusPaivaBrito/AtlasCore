@@ -9,15 +9,17 @@ def test_settings_builds_connection_values_from_env_parts() -> None:
         POSTGRES_PASSWORD="secret",
         POSTGRES_HOST="postgres",
         POSTGRES_PORT=5433,
-        POSTGRES_DB="atlas_test",
+        CORE_POSTGRES_DB="atlas_core_test",
         REDIS_HOST="redis",
         REDIS_PORT=6380,
         REDIS_DB=2,
+        CORE_REDIS_KEY_PREFIX="core",
     )
 
     assert settings.DEBUG is False
-    assert settings.DATABASE_URL == "postgresql+psycopg://atlas:secret@postgres:5433/atlas_test"
+    assert settings.DATABASE_URL == "postgresql+psycopg://atlas:secret@postgres:5433/atlas_core_test"
     assert settings.REDIS_URL == "redis://redis:6380/2"
+    assert settings.REDIS_KEY_PREFIX == "core"
 
 
 def test_settings_allow_connection_url_overrides() -> None:

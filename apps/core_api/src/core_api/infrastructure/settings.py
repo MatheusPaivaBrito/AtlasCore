@@ -28,9 +28,10 @@ class CoreSettings(BaseSettings):
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "atlas_core"
+    CORE_POSTGRES_DB: str = "atlas_core"
     DATABASE_URL_OVERRIDE: str | None = Field(
         default=None,
-        validation_alias=AliasChoices("DATABASE_URL", "DATABASE_URL_OVERRIDE"),
+        validation_alias=AliasChoices("CORE_DATABASE_URL", "DATABASE_URL", "DATABASE_URL_OVERRIDE"),
     )
 
     @property
@@ -41,7 +42,7 @@ class CoreSettings(BaseSettings):
             f"postgresql+psycopg://"
             f"{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
             f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}"
-            f"/{self.POSTGRES_DB}"
+            f"/{self.CORE_POSTGRES_DB}"
         )
 
     # ------------------------------------
@@ -50,9 +51,10 @@ class CoreSettings(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_DB: int = 1
+    REDIS_KEY_PREFIX: str = Field(default="core", validation_alias=AliasChoices("CORE_REDIS_KEY_PREFIX", "REDIS_KEY_PREFIX"))
     REDIS_URL_OVERRIDE: str | None = Field(
         default=None,
-        validation_alias=AliasChoices("REDIS_URL", "REDIS_URL_OVERRIDE"),
+        validation_alias=AliasChoices("CORE_REDIS_URL", "REDIS_URL", "REDIS_URL_OVERRIDE"),
     )
 
     @property

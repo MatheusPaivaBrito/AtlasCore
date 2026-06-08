@@ -41,6 +41,7 @@ async def test_swagger_docs_are_dark_collapsed_and_filterable() -> None:
     assert "color-scheme: dark" in response.text
     assert 'docExpansion: "none"' in response.text
     assert "filter: true" in response.text
+    assert "background-color: transparent !important" in response.text
 
 
 @pytest.mark.asyncio
@@ -55,6 +56,8 @@ async def test_redoc_uses_stable_bundle() -> None:
     assert "redoc@next" not in response.text
     assert "Loading AtlasCore ReDoc" in response.text
     assert 'Redoc.init(\n          "/openapi.json"' in response.text
+    assert 'backgroundColor: "#182232"' in response.text
+    assert ".api-content pre" in response.text
 
 
 def test_library_openapi_is_grouped_by_query_and_command_tags() -> None:

@@ -271,6 +271,19 @@ _SWAGGER_HTML = """
         line-height: 1.65;
       }
 
+      .swagger-ui .microlight *,
+      .swagger-ui .highlight-code *,
+      .swagger-ui pre *,
+      .swagger-ui code * {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        outline: 0 !important;
+        text-shadow: none !important;
+        -webkit-text-stroke: 0 transparent !important;
+      }
+
       .swagger-ui code,
       .swagger-ui pre,
       .swagger-ui .highlight-code code,
@@ -348,6 +361,28 @@ _REDOC_HTML = """
       .redoc-loading p {
         color: #9aa8bd;
       }
+
+      .api-content div[role="tabpanel"],
+      .api-content pre,
+      .api-content pre code {
+        background-color: #182232 !important;
+      }
+
+      .api-content pre {
+        border: 1px solid #2f3f59 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+      }
+
+      .api-content label,
+      .api-content select {
+        max-width: 100%;
+      }
+
+      .api-content label + div,
+      .api-content [data-section-id] div[style*="background"] {
+        box-sizing: border-box;
+      }
     </style>
   </head>
   <body>
@@ -386,13 +421,27 @@ _REDOC_HTML = """
                   delete: "#ff7b72"
                 }
               },
-              rightPanel: { backgroundColor: "#111c2d", textColor: "#e6edf7" },
+              codeBlock: {
+                backgroundColor: "#182232",
+                tokens: {
+                  property: "#d7e2f2",
+                  string: "#9be9a8",
+                  number: "#f2cc60",
+                  boolean: "#f2cc60",
+                  punctuation: "#a9b6c8"
+                }
+              },
+              rightPanel: {
+                backgroundColor: "#121b2b",
+                textColor: "#e6edf7",
+                width: "38%"
+              },
               sidebar: { backgroundColor: "#121b2b", textColor: "#e6edf7" },
               typography: {
                 fontFamily: "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
                 code: {
                   fontFamily: "SFMono-Regular, Consolas, Liberation Mono, monospace",
-                  backgroundColor: "#172235",
+                  backgroundColor: "#1b2840",
                   color: "#e6edf7"
                 }
               }
