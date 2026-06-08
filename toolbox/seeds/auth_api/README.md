@@ -1,17 +1,24 @@
 # Auth API Seeds
 
-Auth API seeds will live here when `auth_api` starts owning its own database.
+`auth_api` owns the identity database (`atlas_auth`).
 
-The future auth database should not reuse the Core API reader/user model. It should own identity and access-control data such as:
+Current executable seed:
 
-- users;
-- credentials;
-- sessions;
-- roles;
-- permissions;
-- role assignments;
-- refresh-token state;
-- `token_version` for token invalidation;
-- audit-safe metadata for security events.
+```bash
+make seed-auth
+```
 
-This folder exists with documentation because the boundary is already known, but the executable seed should be added only when the Auth API has real persistence code.
+The seed creates demo users with bcrypt-hashed passwords in:
+
+- `auth_users`;
+- `auth_user_credentials`.
+
+Known local credentials:
+
+| E-mail | Password | Notes |
+| --- | --- | --- |
+| `admin@atlas.local` | `AtlasAdmin123!` | Superuser demo account. |
+| `librarian@atlas.local` | `AtlasUser123!` | Active product user. |
+| `blocked@atlas.local` | `AtlasBlocked123!` | Inactive account for login tests. |
+
+The Auth database should not reuse the Core API reader/user model. Core readers are business actors inside the library domain; Auth users are identities that can authenticate.

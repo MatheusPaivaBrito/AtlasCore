@@ -1,0 +1,77 @@
+from uuid import UUID
+
+from starlette import status
+
+from shared_kernel.errors import ApplicationError, ErrorTarget
+
+
+class AuthResourceNotFoundError(ApplicationError):
+    status_code = status.HTTP_404_NOT_FOUND
+    code = "auth.resource_not_found"
+    message = "Auth resource was not found."
+
+    def __init__(self, *, entity: str, resource_id: UUID) -> None:
+        super().__init__(
+            message=f"{entity} was not found.",
+            target=ErrorTarget(entity=entity, payload={"id": str(resource_id)}),
+        )
+
+
+class AuthResourceConflictError(ApplicationError):
+    status_code = status.HTTP_409_CONFLICT
+    code = "auth.resource_conflict"
+    message = "Auth resource conflicts with an existing record."
+
+    def __init__(self, *, entity: str, field: str = "email") -> None:
+        super().__init__(
+            message=f"{entity} already exists.",
+            target=ErrorTarget(entity=entity, field=field),
+        )
+
+
+class AuthInvalidCredentialsError(ApplicationError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "auth.invalid_credentials"
+    message = "Invalid credentials."
+
+
+class AuthInactiveUserError(ApplicationError):
+    status_code = status.HTTP_403_FORBIDDEN
+    code = "auth.inactive_user"
+    message = "User is inactive."
+
+
+class AuthMissingTokenError(ApplicationError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "auth.missing_token"
+    message = "Authentication token was not provided."
+
+
+class AuthExpiredTokenError(ApplicationError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "auth.expired_token"
+    message = "Authentication token has expired."
+
+
+class AuthInvalidTokenError(ApplicationError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "auth.invalid_token"
+    message = "Authentication token is invalid."
+
+
+class AuthInvalidSessionError(ApplicationError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "auth.invalid_session"
+    message = "Authentication session is invalid or expired."
+
+
+class AuthPermissionDeniedError(ApplicationError):
+    status_code = status.HTTP_403_FORBIDDEN
+    code = "auth.permission_denied"
+    message = "User does not have permission to perform this action."
+
+    def __init__(self, *, domain: str, action: str) -> None:
+        super().__init__(
+            message=f"Missing permission: {domain}:{action}.",
+            target=ErrorTarget(entity="auth_user_permissions", payload={"domain": domain, "action": action}),
+        )

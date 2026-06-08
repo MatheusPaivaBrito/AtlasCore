@@ -1,0 +1,3 @@
+Auth API Alembic migrations.
+
+This service owns the identity database (`atlas_auth`) and keeps its migrations inside the service boundary.
