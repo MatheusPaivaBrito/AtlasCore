@@ -14,6 +14,8 @@ from core_api.shared.exceptions import (
     CoreResourceNotFoundError,
     CoreUnsupportedFilterError,
 )
+from core_api.shared.auth import core_auth_guard
+from core_api.shared.auth.schemas import AuthorizedUser
 from shared_kernel.time import DateTimeService
 
 ModelT = TypeVar("ModelT")
@@ -32,6 +34,7 @@ def create_crud_router(
     query_tag: str | None = None,
     command_tag: str | None = None,
     resource_label: str | None = None,
+    permission_domain: str | None = None,
     search_fields: tuple[str, ...] = (),
     filter_fields: tuple[str, ...] = (),
 ) -> APIRouter:
@@ -43,6 +46,9 @@ def create_crud_router(
     fallback_tag = tags[0] if tags else readable_name
     query_tags = [query_tag or f"{fallback_tag}: query"]
     command_tags = [command_tag or f"{fallback_tag}: command"]
+    authorization_domain = permission_domain or prefix.strip("/")
+    require_write = core_auth_guard.require_permission(domain=authorization_domain, action="write")
+    require_delete = core_auth_guard.require_permission(domain=authorization_domain, action="delete")
     has_soft_delete = hasattr(model, "deleted_at")
 
     def _load(session: Session, resource_id: UUID, *, include_deleted: bool = False) -> ModelT:
@@ -135,7 +141,11 @@ def create_crud_router(
         tags=command_tags,
         summary=f"Create {readable_name}",
     )
-    def create_resource(payload: create_schema, session: Session = Depends(get_session)) -> Any:  # type: ignore[valid-type]
+    def create_resource(
+        payload: create_schema,  # type: ignore[valid-type]
+        authorized_user: AuthorizedUser = require_write,
+        session: Session = Depends(get_session),
+    ) -> Any:
         instance = model(**payload.model_dump())
         return _persist(session, instance)
 
@@ -192,6 +202,7 @@ def create_crud_router(
     def update_resource(
         resource_id: UUID,
         payload: update_schema,  # type: ignore[valid-type]
+        authorized_user: AuthorizedUser = require_write,
         session: Session = Depends(get_session),
     ) -> Any:
         instance = _load(session, resource_id)
@@ -206,7 +217,11 @@ def create_crud_router(
         tags=command_tags,
         summary=f"Delete {readable_name}",
     )
-    def delete_resource(resource_id: UUID, session: Session = Depends(get_session)) -> None:
+    def delete_resource(
+        resource_id: UUID,
+        authorized_user: AuthorizedUser = require_delete,
+        session: Session = Depends(get_session),
+    ) -> None:
         instance = _load(session, resource_id)
         if has_soft_delete:
             soft_delete = getattr(instance, "soft_delete", None)
@@ -226,7 +241,11 @@ def create_crud_router(
         tags=command_tags,
         summary=f"Restore {readable_name}",
     )
-    def restore_resource(resource_id: UUID, session: Session = Depends(get_session)) -> Any:
+    def restore_resource(
+        resource_id: UUID,
+        authorized_user: AuthorizedUser = require_write,
+        session: Session = Depends(get_session),
+    ) -> Any:
         instance = _load(session, resource_id, include_deleted=True)
         if has_soft_delete:
             restore = getattr(instance, "restore", None)

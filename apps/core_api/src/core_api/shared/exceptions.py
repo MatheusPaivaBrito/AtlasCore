@@ -65,3 +65,30 @@ class CoreInvalidFilterValueError(CoreApiError):
                 payload={"value": value, "expected_type": expected_type},
             ),
         )
+
+
+class CoreAuthenticationRequiredError(CoreApiError):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    code = "core_api.authentication_required"
+    message = "Authentication is required for this Core API route."
+
+
+class CoreAuthorizationDeniedError(CoreApiError):
+    status_code = status.HTTP_403_FORBIDDEN
+    code = "core_api.authorization_denied"
+    message = "The authenticated user is not allowed to perform this Core API action."
+
+    def __init__(self, *, domain: str, action: str) -> None:
+        super().__init__(
+            f"Missing permission: {domain}:{action}.",
+            target=ErrorTarget(
+                entity="auth_user_permissions",
+                payload={"domain": domain, "action": action},
+            ),
+        )
+
+
+class CoreAuthServiceUnavailableError(CoreApiError):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    code = "core_api.auth_service_unavailable"
+    message = "Auth API is unavailable for Core API authorization."

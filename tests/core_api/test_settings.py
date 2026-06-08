@@ -14,12 +14,17 @@ def test_settings_builds_connection_values_from_env_parts() -> None:
         REDIS_PORT=6380,
         REDIS_DB=2,
         CORE_REDIS_KEY_PREFIX="core",
+        AUTH_API_INTERNAL_URL="http://auth-api:8000",
+        AUTH_INTROSPECTION_TIMEOUT_SECONDS=0.7,
     )
 
     assert settings.DEBUG is False
     assert settings.DATABASE_URL == "postgresql+psycopg://atlas:secret@postgres:5433/atlas_core_test"
     assert settings.REDIS_URL == "redis://redis:6380/2"
     assert settings.REDIS_KEY_PREFIX == "core"
+    assert settings.AUTH_API_INTERNAL_URL == "http://auth-api:8000"
+    assert settings.AUTH_INTROSPECTION_PATH == "/internal/auth/introspect"
+    assert settings.AUTH_INTROSPECTION_TIMEOUT_SECONDS == 0.7
 
 
 def test_settings_allow_connection_url_overrides() -> None:

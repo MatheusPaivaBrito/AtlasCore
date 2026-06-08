@@ -89,6 +89,16 @@ class CoreSettings(BaseSettings):
         )
 
     # ------------------------------------
+    # AUTH API
+    # ------------------------------------
+    AUTH_API_INTERNAL_URL: str = "http://localhost:8001"
+    AUTH_INTROSPECTION_PATH: str = "/internal/auth/introspect"
+    AUTH_INTROSPECTION_TIMEOUT_SECONDS: float = Field(
+        default=1.0,
+        validation_alias=AliasChoices("AUTH_INTROSPECTION_TIMEOUT_SECONDS", "AUTH_API_CHECK_TIMEOUT_SECONDS"),
+    )
+
+    # ------------------------------------
     # PYDANTIC
     # ------------------------------------
     model_config = SETTINGS_CONFIG

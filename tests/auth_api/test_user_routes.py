@@ -89,6 +89,16 @@ async def test_auth_user_crud_restore_and_login(auth_database: None) -> None:
         assert admin_auth["refresh_token"]
         auth_headers = {"Authorization": f"Bearer {admin_auth['access_token']}"}
 
+        admin_introspection_response = await client.post(
+            "/internal/auth/introspect",
+            headers=auth_headers,
+            json={"required_permission": {"domain": "users", "action": "delete"}},
+        )
+        assert admin_introspection_response.status_code == 200
+        assert admin_introspection_response.json()["active"] is True
+        assert admin_introspection_response.json()["allowed"] is True
+        assert admin_introspection_response.json()["user"]["email"] == "admin@atlas.local"
+
         create_response = await client.post(
             "/users",
             headers=auth_headers,
@@ -135,6 +145,23 @@ async def test_auth_user_crud_restore_and_login(auth_database: None) -> None:
         assert login_response.status_code == 200
         assert login_response.json()["authenticated"] is True
         assert login_response.json()["user"]["id"] == user_id
+        user_headers = {"Authorization": f"Bearer {login_response.json()['access_token']}"}
+
+        allowed_introspection_response = await client.post(
+            "/internal/auth/introspect",
+            headers=user_headers,
+            json={"required_permission": {"domain": "users", "action": "read"}},
+        )
+        assert allowed_introspection_response.status_code == 200
+        assert allowed_introspection_response.json()["allowed"] is True
+
+        denied_introspection_response = await client.post(
+            "/internal/auth/introspect",
+            headers=user_headers,
+            json={"required_permission": {"domain": "users", "action": "write"}},
+        )
+        assert denied_introspection_response.status_code == 200
+        assert denied_introspection_response.json()["allowed"] is False
 
         delete_response = await client.delete(f"/users/{user_id}", headers=auth_headers)
         assert delete_response.status_code == 204
@@ -184,5 +211,6 @@ def test_auth_user_routes_are_registered() -> None:
     assert "/auth/refresh" in paths
     assert "/auth/logout" in paths
     assert "/auth/logout-all" in paths
+    assert "/internal/auth/introspect" in paths
     assert "/sessions/me" in paths
     assert "/access-control/me" in paths

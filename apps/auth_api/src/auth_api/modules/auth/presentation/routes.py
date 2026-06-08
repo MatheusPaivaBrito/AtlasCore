@@ -6,12 +6,20 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from auth_api.infrastructure.database.connection import get_session
-from auth_api.modules.access_control.application.permissions import serialize_user_permissions
+from auth_api.modules.access_control.application.permissions import serialize_user_permissions, user_has_permission
 from auth_api.modules.auth.application.cookies import REFRESH_TOKEN_COOKIE, clear_auth_cookies, set_auth_cookies
 from auth_api.modules.auth.application.guards import auth_guard, bearer_scheme
 from auth_api.modules.auth.application.passwords import verify_password
 from auth_api.modules.auth.application.tokens import jwt_service
-from auth_api.modules.auth.presentation.schemas import LoginRequest, LoginResponse, LogoutResponse, RefreshResponse
+from auth_api.modules.auth.presentation.schemas import (
+    IntrospectionRequest,
+    IntrospectionResponse,
+    IntrospectionUser,
+    LoginRequest,
+    LoginResponse,
+    LogoutResponse,
+    RefreshResponse,
+)
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
 from auth_api.modules.users.domain.user_entity import UserEntity
 from auth_api.shared.exceptions import (
@@ -24,6 +32,7 @@ from auth_api.shared.exceptions import (
 from shared_kernel.time import DateTimeService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+internal_router = APIRouter(prefix="/internal/auth", tags=["internal-auth"])
 
 
 @router.post("/login", response_model=LoginResponse, summary="Login with email and password")
@@ -180,3 +189,46 @@ def logout_all(
     session_service.delete_all_sessions(user_id=current_user.id)
     clear_auth_cookies(response=response)
     return LogoutResponse()
+
+
+@internal_router.post(
+    "/introspect",
+    response_model=IntrospectionResponse,
+    summary="Validate a token and optional permission for service-to-service authorization",
+)
+def introspect(
+    payload: IntrospectionRequest,
+    request: Request,
+    credentials: HTTPAuthorizationCredentials | None = Security(bearer_scheme),
+    session: Session = Depends(get_session),
+    session_service: SessionService = Depends(get_session_service),
+) -> IntrospectionResponse:
+    user = auth_guard.get_current_user(
+        request=request,
+        credentials=credentials,
+        session=session,
+        session_service=session_service,
+    )
+    permissions = serialize_user_permissions(user)
+    allowed = True
+
+    if payload.required_permission is not None:
+        allowed = user_has_permission(
+            user,
+            domain=payload.required_permission.domain,
+            action=payload.required_permission.action,
+        )
+
+    return IntrospectionResponse(
+        active=True,
+        allowed=allowed,
+        user=IntrospectionUser(
+            id=user.id,
+            email=user.email,
+            is_active=user.is_active,
+            is_superuser=user.is_superuser,
+            token_version=user.token_version,
+        ),
+        permissions=permissions,
+        required_permission=payload.required_permission,
+    )
