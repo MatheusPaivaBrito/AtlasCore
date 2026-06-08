@@ -12,6 +12,7 @@ export
 # ------------------------------------
 COMPOSE = docker compose
 CORE_ALEMBIC = apps/core_api/alembic.ini
+AUTH_ALEMBIC = apps/auth_api/alembic.ini
 DOCS_PT = docs-site/mkdocs.pt-br.yml
 DOCS_EN = docs-site/mkdocs.en.yml
 ENSURE_RUNTIME = poetry run python toolbox/checks/ensure_runtime_dependencies.py
@@ -57,7 +58,8 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 	ensure ensure-all ensure-core ensure-auth ensure-eventing ensure-notifications ensure-observability \
 	dev dev-all dev-core dev-auth dev-eventing dev-notifications dev-observability \
 	prod prod-all prod-core prod-auth prod-eventing prod-notifications prod-observability \
-	migrate revision seed seed-core docs docs-pt docs-en docs-all test
+	migrate migrate-core migrate-auth migrate-all revision revision-core revision-auth \
+	seed seed-core seed-auth seed-all docs docs-pt docs-en docs-all test
 
 # ------------------------------------
 # HELP
@@ -106,11 +108,17 @@ help makehelp:
 	@echo ""
 	@echo "Database"
 	@echo "  make migrate              Run core_api Alembic migrations"
+	@echo "  make migrate-core         Run core_api Alembic migrations"
+	@echo "  make migrate-auth         Run auth_api Alembic migrations"
+	@echo "  make migrate-all          Run all API migrations"
 	@echo "  make revision name=...    Create a core_api Alembic revision"
+	@echo "  make revision-auth name=... Create an auth_api Alembic revision"
 	@echo "  make seed-core            Seed core_api library data"
+	@echo "  make seed-auth            Seed auth_api users"
 	@echo ""
 	@echo "Toolbox"
-	@echo "  make seed                 Alias for make seed-core"
+	@echo "  make seed                 Seed all available demo data"
+	@echo "  make seed-all             Seed all available demo data"
 	@echo ""
 	@echo "Docs and Tests"
 	@echo "  make docs                 Serve PT-BR docs at http://127.0.0.1:$(DOCS_PT_PORT)"
@@ -294,18 +302,37 @@ prod-observability: ensure-observability
 # ------------------------------------
 # DATABASE
 # ------------------------------------
-migrate:
+migrate: migrate-core
+
+migrate-core: ensure-core
 	PYTHONPATH=$(CORE_PYTHONPATH) poetry run alembic -c $(CORE_ALEMBIC) upgrade head
 
-revision:
+revision: revision-core
+
+revision-core:
 	PYTHONPATH=$(CORE_PYTHONPATH) poetry run alembic -c $(CORE_ALEMBIC) revision --autogenerate -m "$(name)"
 
-seed: seed-core
+migrate-auth: ensure-auth
+	PYTHONPATH=$(AUTH_PYTHONPATH) poetry run alembic -c $(AUTH_ALEMBIC) upgrade head
 
-seed-core:
+revision-auth:
+	PYTHONPATH=$(AUTH_PYTHONPATH) poetry run alembic -c $(AUTH_ALEMBIC) revision --autogenerate -m "$(name)"
+
+migrate-all: migrate-core migrate-auth
+
+seed: seed-all
+
+seed-all: seed-core seed-auth
+
+seed-core: ensure-core
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(CORE_PYTHONPATH) \
 	poetry run python toolbox/seeds/core_api/library_seed.py
+
+seed-auth: ensure-auth
+	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(AUTH_PYTHONPATH) \
+	poetry run python toolbox/seeds/auth_api/user_seed.py
 
 # ------------------------------------
 # DOCS AND TESTS

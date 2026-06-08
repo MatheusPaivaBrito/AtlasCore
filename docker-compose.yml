@@ -101,10 +101,14 @@ services:
     environment:
       <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: auth_api
-      REDIS_URL: redis://redis:6379/1
+      AUTH_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${AUTH_POSTGRES_DB:-atlas_auth}
+      AUTH_REDIS_URL: redis://redis:6379/${AUTH_REDIS_DB:-1}
+      AUTH_REDIS_KEY_PREFIX: ${AUTH_REDIS_KEY_PREFIX:-auth}
     ports:
       - "${AUTH_API_PORT:-8001}:8000"
     depends_on:
+      postgres:
+        condition: service_healthy
       redis:
         condition: service_healthy
 
@@ -117,8 +121,9 @@ services:
     environment:
       <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: core_api
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${POSTGRES_DB:-atlas_core}
-      REDIS_URL: redis://redis:6379/1
+      CORE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${CORE_POSTGRES_DB:-atlas_core}
+      CORE_REDIS_URL: redis://redis:6379/${CORE_REDIS_DB:-1}
+      CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-core}
     ports:
       - "${CORE_API_PORT:-8000}:8000"
     depends_on:
@@ -136,7 +141,7 @@ services:
     environment:
       <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: eventing_api
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${POSTGRES_DB:-atlas_core}
+      EVENTING_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${EVENTING_POSTGRES_DB:-atlas_eventing}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     ports:
       - "${EVENTING_API_PORT:-8002}:8000"
@@ -155,7 +160,8 @@ services:
     environment:
       <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: notification_api
-      REDIS_URL: redis://redis:6379/1
+      NOTIFICATION_REDIS_URL: redis://redis:6379/${NOTIFICATION_REDIS_DB:-1}
+      NOTIFICATION_REDIS_KEY_PREFIX: ${NOTIFICATION_REDIS_KEY_PREFIX:-notification}
     ports:
       - "${NOTIFICATION_API_PORT:-8003}:8000"
     depends_on:

@@ -13,6 +13,7 @@ from urllib.parse import urlparse
 from urllib.request import urlopen
 
 import psycopg
+from psycopg import sql
 import redis
 
 
@@ -57,20 +58,37 @@ def _load_env_file(path: Path) -> None:
             os.environ.setdefault(key, raw)
 
 
-def _check_postgres() -> None:
-    database_url = _env("DATABASE_URL")
+def _postgres_conninfo(database: str) -> str:
+    user = _env("POSTGRES_USER", "atlas")
+    password = _env("POSTGRES_PASSWORD", "atlas")
+    host = _env("POSTGRES_HOST", "localhost")
+    port = _env("POSTGRES_PORT", "5432")
+    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+
+def _ensure_postgres_database(database: str) -> None:
+    admin_database = _env("POSTGRES_ADMIN_DB", "postgres")
+
+    with psycopg.connect(_postgres_conninfo(admin_database), connect_timeout=2, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("select 1 from pg_database where datname = %s", (database,))
+            exists = cursor.fetchone() is not None
+
+            if not exists:
+                cursor.execute(sql.SQL("create database {}").format(sql.Identifier(database)))
+
+
+def _check_postgres(database: str, *url_env_names: str) -> None:
+    database_url = next((_env(name) for name in url_env_names if _env(name)), "")
 
     if database_url:
         conninfo = database_url.replace("postgresql+psycopg://", "postgresql://", 1)
     else:
-        user = _env("POSTGRES_USER", "atlas")
-        password = _env("POSTGRES_PASSWORD", "atlas")
-        host = _env("POSTGRES_HOST", "localhost")
-        port = _env("POSTGRES_PORT", "5432")
-        database = _env("POSTGRES_DB", "atlas_core")
-        conninfo = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+        conninfo = _postgres_conninfo(database)
 
     try:
+        if not database_url:
+            _ensure_postgres_database(database)
         with psycopg.connect(conninfo, connect_timeout=2) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("select 1")
@@ -79,8 +97,20 @@ def _check_postgres() -> None:
         raise DependencyUnavailable(str(exc)) from exc
 
 
-def _check_redis() -> None:
-    redis_url = _env("REDIS_URL")
+def _check_core_postgres() -> None:
+    _check_postgres(_env("CORE_POSTGRES_DB", _env("POSTGRES_DB", "atlas_core")), "CORE_DATABASE_URL", "DATABASE_URL")
+
+
+def _check_auth_postgres() -> None:
+    _check_postgres(_env("AUTH_POSTGRES_DB", "atlas_auth"), "AUTH_DATABASE_URL")
+
+
+def _check_eventing_postgres() -> None:
+    _check_postgres(_env("EVENTING_POSTGRES_DB", "atlas_eventing"), "EVENTING_DATABASE_URL")
+
+
+def _check_redis(database: int, *url_env_names: str) -> None:
+    redis_url = next((_env(name) for name in url_env_names if _env(name)), "")
 
     try:
         if redis_url:
@@ -89,7 +119,7 @@ def _check_redis() -> None:
             client = redis.Redis(
                 host=_env("REDIS_HOST", "localhost"),
                 port=int(_env("REDIS_PORT", "6379")),
-                db=int(_env("REDIS_DB", "1")),
+                db=database,
                 socket_connect_timeout=2,
                 socket_timeout=2,
             )
@@ -97,6 +127,18 @@ def _check_redis() -> None:
         client.ping()
     except Exception as exc:
         raise DependencyUnavailable(str(exc)) from exc
+
+
+def _check_core_redis() -> None:
+    _check_redis(int(_env("CORE_REDIS_DB", _env("REDIS_DB", "1"))), "CORE_REDIS_URL", "REDIS_URL")
+
+
+def _check_auth_redis() -> None:
+    _check_redis(int(_env("AUTH_REDIS_DB", _env("REDIS_DB", "1"))), "AUTH_REDIS_URL")
+
+
+def _check_notification_redis() -> None:
+    _check_redis(int(_env("NOTIFICATION_REDIS_DB", _env("REDIS_DB", "1"))), "NOTIFICATION_REDIS_URL")
 
 
 def _check_tcp(host: str, port: int, label: str) -> None:
@@ -144,18 +186,32 @@ def _check_grafana() -> None:
 
 
 DEPENDENCIES: dict[str, RuntimeDependency] = {
-    "postgres": RuntimeDependency("postgres", "Postgres", ("postgres",), _check_postgres),
-    "redis": RuntimeDependency("redis", "Redis", ("redis",), _check_redis),
+    "core_postgres": RuntimeDependency("core_postgres", "Core Postgres database", ("postgres",), _check_core_postgres),
+    "auth_postgres": RuntimeDependency("auth_postgres", "Auth Postgres database", ("postgres",), _check_auth_postgres),
+    "eventing_postgres": RuntimeDependency(
+        "eventing_postgres",
+        "Eventing Postgres database",
+        ("postgres",),
+        _check_eventing_postgres,
+    ),
+    "core_redis": RuntimeDependency("core_redis", "Core Redis namespace", ("redis",), _check_core_redis),
+    "auth_redis": RuntimeDependency("auth_redis", "Auth Redis namespace", ("redis",), _check_auth_redis),
+    "notification_redis": RuntimeDependency(
+        "notification_redis",
+        "Notification Redis namespace",
+        ("redis",),
+        _check_notification_redis,
+    ),
     "kafka": RuntimeDependency("kafka", "Kafka", ("kafka",), _check_kafka),
     "loki": RuntimeDependency("loki", "Loki", ("loki",), _check_loki),
     "grafana": RuntimeDependency("grafana", "Grafana", ("loki", "grafana"), _check_grafana),
 }
 
 SERVICE_DEPENDENCIES: dict[str, tuple[str, ...]] = {
-    "core_api": ("postgres", "redis"),
-    "auth_api": ("postgres", "redis"),
-    "eventing_api": ("postgres", "kafka"),
-    "notification_api": ("redis",),
+    "core_api": ("core_postgres", "core_redis"),
+    "auth_api": ("auth_postgres", "auth_redis"),
+    "eventing_api": ("eventing_postgres", "kafka"),
+    "notification_api": ("notification_redis",),
     "observability_api": ("loki", "grafana"),
 }
 
