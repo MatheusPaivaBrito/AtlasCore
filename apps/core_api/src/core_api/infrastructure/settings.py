@@ -18,7 +18,10 @@ class CoreSettings(BaseSettings):
     APP_NAME: str = "AtlasCore"
     ENVIRONMENT: str = "development"
     DEBUG: bool = Field(default=True, validation_alias=AliasChoices("APP_DEBUG", "ATLAS_DEBUG"))
-    SERVICE_NAME: str = "core_api"
+    SERVICE_NAME: str = Field(
+        default="core_api",
+        validation_alias=AliasChoices("CORE_SERVICE_NAME", "SERVICE_NAME"),
+    )
 
     # ------------------------------------
     # POSTGRES

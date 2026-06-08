@@ -9,7 +9,10 @@ class EventingSettings(BaseSettings):
     # APP
     # ------------------------------------
     APP_NAME: str = "AtlasCore"
-    SERVICE_NAME: str = "eventing_api"
+    SERVICE_NAME: str = Field(
+        default="eventing_api",
+        validation_alias=AliasChoices("EVENTING_SERVICE_NAME", "SERVICE_NAME"),
+    )
 
     # ------------------------------------
     # CORS

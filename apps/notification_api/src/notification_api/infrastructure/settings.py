@@ -9,7 +9,10 @@ class NotificationSettings(BaseSettings):
     # APP
     # ------------------------------------
     APP_NAME: str = "AtlasCore"
-    SERVICE_NAME: str = "notification_api"
+    SERVICE_NAME: str = Field(
+        default="notification_api",
+        validation_alias=AliasChoices("NOTIFICATION_SERVICE_NAME", "SERVICE_NAME"),
+    )
 
     # ------------------------------------
     # CORS

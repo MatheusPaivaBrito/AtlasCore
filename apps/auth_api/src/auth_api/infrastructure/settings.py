@@ -9,7 +9,10 @@ class AuthSettings(BaseSettings):
     # APP
     # ------------------------------------
     APP_NAME: str = "AtlasCore"
-    SERVICE_NAME: str = "auth_api"
+    SERVICE_NAME: str = Field(
+        default="auth_api",
+        validation_alias=AliasChoices("AUTH_SERVICE_NAME", "SERVICE_NAME"),
+    )
 
     # ------------------------------------
     # POSTGRES

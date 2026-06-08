@@ -9,7 +9,10 @@ class ObservabilitySettings(BaseSettings):
     # APP
     # ------------------------------------
     APP_NAME: str = "AtlasCore"
-    SERVICE_NAME: str = "observability_api"
+    SERVICE_NAME: str = Field(
+        default="observability_api",
+        validation_alias=AliasChoices("OBSERVABILITY_SERVICE_NAME", "SERVICE_NAME"),
+    )
 
     # ------------------------------------
     # CORS
