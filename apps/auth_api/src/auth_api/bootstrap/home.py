@@ -1,28 +1,69 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
+
+from shared_kernel.http import HomeAction, HomeCard, HomePage, HomeSection, render_service_home
 
 
 router = APIRouter(include_in_schema=False)
-templates = Jinja2Templates(directory=str(Path(__file__).with_name("templates")))
-
 
 @router.get("/")
 def home(request: Request):
-    return templates.TemplateResponse(
+    return render_service_home(
         request=request,
-        name="home.html",
-        context={
-            "service_name": "AtlasCore Auth API",
-            "swagger_url": "/docs",
-            "redoc_url": "/redoc",
-            "health_url": "/health",
-            "login_url": "/auth/login",
-            "introspection_url": "/internal/auth/introspect",
-            "core_home_url": "http://localhost:8000",
-            "core_docs_url": "http://localhost:8000/docs",
-            "docs_pt_url": "http://localhost:8080",
-            "docs_en_url": "http://localhost:8081",
-        },
+        page=HomePage(
+            service_name="AtlasCore Auth API",
+            eyebrow="FastAPI - Auth - JWT - Redis Sessions - RBAC",
+            description=(
+                "Identity and security boundary for AtlasCore. This API owns users, bcrypt credentials, "
+                "access and refresh tokens, Redis-backed sessions, device limits and permission checks used by Core."
+            ),
+            actions=(
+                HomeAction(label="Open Swagger Docs", url="/docs", primary=True),
+                HomeAction(label="Open ReDoc", url="/redoc"),
+                HomeAction(label="Open AtlasCore Home", url="http://localhost:8000"),
+            ),
+            sections=(
+                HomeSection(
+                    title="Auth API capabilities",
+                    description=(
+                        "Auth stays independent from Core while exposing security contracts that other APIs can consume."
+                    ),
+                    columns=3,
+                    cards=(
+                        HomeCard(
+                            title="Security boundary",
+                            status="Auth API online",
+                            description=(
+                                "Login starts at /auth/login. The response returns access/refresh tokens "
+                                "and sets HTTP-only cookies for browser flows."
+                            ),
+                            links=(
+                                HomeAction(label="Health", url="/health"),
+                                HomeAction(label="Swagger", url="/docs"),
+                            ),
+                        ),
+                        HomeCard(
+                            title="Core authorization",
+                            status="Internal contract ready",
+                            description=(
+                                "Core command routes call /internal/auth/introspect to validate bearer tokens "
+                                "and permissions such as books:write."
+                            ),
+                            links=(HomeAction(label="Core Swagger", url="http://localhost:8000/docs"),),
+                        ),
+                        HomeCard(
+                            title="Project context",
+                            status="Docs available",
+                            description=(
+                                "Architecture notes explain why Auth owns identity while Core owns business data "
+                                "and only consumes authorization decisions."
+                            ),
+                            links=(
+                                HomeAction(label="MkDocs PT-BR", url="http://localhost:8080"),
+                                HomeAction(label="MkDocs EN", url="http://localhost:8081"),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        ),
     )

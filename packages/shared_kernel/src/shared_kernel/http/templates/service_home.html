@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ service_name }}</title>
+    <title>{{ page.service_name }}</title>
     <style>
       :root {
         color-scheme: dark;
@@ -88,22 +88,27 @@
         margin-top: 4px;
       }
 
-      .button {
+      .button,
+      .mini-link {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 42px;
-        padding: 0 16px;
         border: 1px solid var(--border);
         border-radius: 8px;
-        background: var(--panel);
         color: var(--text);
         font-weight: 700;
         text-decoration: none;
         transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
       }
 
-      .button:hover {
+      .button {
+        min-height: 42px;
+        padding: 0 16px;
+        background: var(--panel);
+      }
+
+      .button:hover,
+      .mini-link:hover {
         border-color: var(--accent);
         background: var(--panel-soft);
         transform: translateY(-1px);
@@ -115,7 +120,8 @@
         color: #ecfeff;
       }
 
-      .button.disabled {
+      .button.disabled,
+      .mini-link.disabled {
         pointer-events: none;
         color: #6f7d92;
         background: rgba(16, 24, 39, 0.58);
@@ -138,20 +144,25 @@
         font-size: 0.95rem;
       }
 
-      .api-grid {
+      .card-grid {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 14px;
       }
 
-      .docs-grid {
-        display: grid;
+      .columns-2 {
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
+      }
+
+      .columns-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .columns-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
       }
 
       .card {
-        min-height: 214px;
+        min-height: 176px;
         padding: 18px;
         border: 1px solid var(--border);
         border-radius: 8px;
@@ -203,22 +214,10 @@
       }
 
       .mini-link {
-        display: inline-flex;
-        align-items: center;
         min-height: 32px;
         padding: 0 10px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
         background: rgba(255, 255, 255, 0.03);
-        color: var(--text);
         font-size: 0.82rem;
-        font-weight: 700;
-        text-decoration: none;
-      }
-
-      .mini-link.disabled {
-        pointer-events: none;
-        color: #6f7d92;
       }
 
       code {
@@ -229,8 +228,14 @@
       }
 
       @media (max-width: 1120px) {
-        .api-grid {
+        .columns-5 {
           grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 920px) {
+        .columns-3 {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -240,8 +245,8 @@
           padding-top: 32px;
         }
 
-        .api-grid,
-        .docs-grid {
+        .columns-2,
+        .columns-5 {
           grid-template-columns: 1fr;
         }
 
@@ -263,75 +268,54 @@
   <body>
     <main>
       <header>
-        <span class="eyebrow">FastAPI - DDD - Clean Architecture</span>
-        <h1>{{ service_name }}</h1>
-        <p>
-          AtlasCore is a backend foundation with product APIs, platform APIs, local infrastructure,
-          MkDocs documentation and a Core API that already exposes a verticalized library domain.
-        </p>
-        <nav class="actions" aria-label="Primary project links">
-          <a class="button primary" href="{{ core_docs_url }}">Core Swagger</a>
-          <a class="button" href="{{ core_redoc_url }}">Core ReDoc</a>
-          <a class="button" href="{{ docs_pt_url }}">MkDocs PT-BR</a>
-          <a class="button" href="{{ docs_en_url }}">MkDocs EN</a>
+        <span class="eyebrow">{{ page.eyebrow }}</span>
+        <h1>{{ page.service_name }}</h1>
+        <p>{{ page.description }}</p>
+        <nav class="actions" aria-label="Primary links">
+          {% for action in page.actions %}
+            {% if action.available %}
+              <a class="button{% if action.primary %} primary{% endif %}" href="{{ action.url }}">{{ action.label }}</a>
+            {% else %}
+              <span class="button disabled">{{ action.label }}</span>
+            {% endif %}
+          {% endfor %}
         </nav>
       </header>
 
-      <section class="section" aria-label="API runtimes">
-        <div class="section-title">
-          <h2>API runtimes</h2>
-          <p>Each backend has its own port. Online services expose Swagger/ReDoc links; offline services still show the expected local address.</p>
-        </div>
-        <div class="api-grid">
-          {% for service in api_services %}
-            <article class="card">
-              <span class="status">
-                <span class="dot{% if service.available %} online{% endif %}"></span>
-                {{ service.name }} {% if service.available %}online{% else %}offline{% endif %}
-              </span>
-              <h3>{{ service.name }}</h3>
-              <p>{{ service.description }}</p>
-              <p><code>localhost:{{ service.port }}</code></p>
-              <div class="links" aria-label="{{ service.name }} links">
-                {% if service.available %}
-                  <a class="mini-link" href="{{ service.docs_url }}">Swagger</a>
-                  <a class="mini-link" href="{{ service.redoc_url }}">ReDoc</a>
-                {% else %}
-                  <span class="mini-link disabled">Swagger</span>
-                  <span class="mini-link disabled">ReDoc</span>
+      {% for section in page.sections %}
+        <section class="section" aria-label="{{ section.title }}">
+          <div class="section-title">
+            <h2>{{ section.title }}</h2>
+            <p>{{ section.description }}</p>
+          </div>
+          <div class="card-grid columns-{{ section.columns }}">
+            {% for card in section.cards %}
+              <article class="card{% if card.compact %} compact{% endif %}">
+                <span class="status">
+                  <span class="dot{% if card.available %} online{% endif %}"></span>
+                  {{ card.status }}
+                </span>
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.description }}</p>
+                {% if card.code %}
+                  <p><code>{{ card.code }}</code></p>
                 {% endif %}
-              </div>
-            </article>
-          {% endfor %}
-        </div>
-      </section>
-
-      <section class="section" aria-label="Documentation sites">
-        <div class="section-title">
-          <h2>Project documentation</h2>
-          <p>MkDocs runs separately from the APIs so the architecture guide can be served while backends are started and stopped independently.</p>
-        </div>
-        <div class="docs-grid">
-          {% for site in documentation_sites %}
-            <article class="card compact">
-              <span class="status">
-                <span class="dot{% if site.available %} online{% endif %}"></span>
-                {{ site.name }} {% if site.available %}online{% else %}offline{% endif %}
-              </span>
-              <h3>{{ site.name }}</h3>
-              <p>{{ site.description }}</p>
-              <p><code>localhost:{{ site.port }}</code></p>
-              <div class="links" aria-label="{{ site.name }} links">
-                {% if site.available %}
-                  <a class="mini-link" href="{{ site.base_url }}">Open docs</a>
-                {% else %}
-                  <span class="mini-link disabled">Open docs</span>
+                {% if card.links %}
+                  <div class="links" aria-label="{{ card.title }} links">
+                    {% for link in card.links %}
+                      {% if link.available %}
+                        <a class="mini-link" href="{{ link.url }}">{{ link.label }}</a>
+                      {% else %}
+                        <span class="mini-link disabled">{{ link.label }}</span>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
                 {% endif %}
-              </div>
-            </article>
-          {% endfor %}
-        </div>
-      </section>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
     </main>
   </body>
 </html>

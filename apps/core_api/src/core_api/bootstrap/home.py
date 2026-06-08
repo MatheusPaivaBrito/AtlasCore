@@ -1,26 +1,28 @@
-from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.request import urlopen
-
 from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
 
 from core_api.infrastructure.platform_discovery import platform_discovery_settings
+from shared_kernel.http import (
+    HomeAction,
+    HomeCard,
+    HomePage,
+    HomeSection,
+    is_url_available,
+    join_url,
+    render_service_home,
+)
 
 
 router = APIRouter(include_in_schema=False)
-templates = Jinja2Templates(directory=str(Path(__file__).with_name("templates")))
 
 def _join_url(base_url: str, path: str) -> str:
-    return f"{base_url.rstrip('/')}/{path.lstrip('/')}"
+    return join_url(base_url, path)
 
 
 def _is_url_available(url: str) -> bool:
-    try:
-        with urlopen(url, timeout=platform_discovery_settings.SERVICE_CHECK_TIMEOUT_SECONDS) as response:
-            return 200 <= response.status < 400
-    except (HTTPError, TimeoutError, URLError, OSError):
-        return False
+    return is_url_available(
+        url,
+        timeout_seconds=platform_discovery_settings.SERVICE_CHECK_TIMEOUT_SECONDS,
+    )
 
 
 def _api_service(
@@ -35,32 +37,51 @@ def _api_service(
     health_url = _join_url(service_base_url, platform_discovery_settings.SERVICE_HEALTH_PATH)
     available = True if current else _is_url_available(health_url)
 
-    return {
-        "name": name,
-        "port": port,
-        "description": description,
-        "base_url": service_base_url,
-        "docs_url": _join_url(service_base_url, platform_discovery_settings.SERVICE_DOCS_PATH),
-        "redoc_url": _join_url(service_base_url, platform_discovery_settings.SERVICE_REDOC_PATH),
-        "available": available,
-    }
+    return HomeCard(
+        title=name,
+        description=description,
+        status=f"{name} {'online' if available else 'offline'}",
+        available=available,
+        code=f"localhost:{port}",
+        links=(
+            HomeAction(
+                label="Swagger",
+                url=_join_url(service_base_url, platform_discovery_settings.SERVICE_DOCS_PATH),
+                available=available,
+            ),
+            HomeAction(
+                label="ReDoc",
+                url=_join_url(service_base_url, platform_discovery_settings.SERVICE_REDOC_PATH),
+                available=available,
+            ),
+        ),
+    )
 
 
-def _documentation_site(*, name: str, port: int, description: str) -> dict[str, object]:
+def _documentation_site(*, name: str, port: int, description: str) -> HomeCard:
     if port == platform_discovery_settings.DOCS_PT_PORT:
         base_url = platform_discovery_settings.DOCS_PT_PUBLIC_URL
     elif port == platform_discovery_settings.DOCS_EN_PORT:
         base_url = platform_discovery_settings.DOCS_EN_PUBLIC_URL
     else:
         base_url = f"http://localhost:{port}"
+    available = _is_url_available(base_url)
 
-    return {
-        "name": name,
-        "port": port,
-        "description": description,
-        "base_url": base_url,
-        "available": _is_url_available(base_url),
-    }
+    return HomeCard(
+        title=name,
+        description=description,
+        status=f"{name} {'online' if available else 'offline'}",
+        available=available,
+        code=f"localhost:{port}",
+        compact=True,
+        links=(
+            HomeAction(
+                label="Open docs",
+                url=base_url,
+                available=available,
+            ),
+        ),
+    )
 
 
 @router.get("/")
@@ -111,16 +132,53 @@ def home(request: Request):
         ),
     ]
 
-    return templates.TemplateResponse(
+    return render_service_home(
         request=request,
-        name="home.html",
-        context={
-            "service_name": platform_discovery_settings.APP_NAME,
-            "api_services": api_services,
-            "documentation_sites": documentation_sites,
-            "core_docs_url": platform_discovery_settings.SERVICE_DOCS_PATH,
-            "core_redoc_url": platform_discovery_settings.SERVICE_REDOC_PATH,
-            "docs_pt_url": platform_discovery_settings.DOCS_PT_PUBLIC_URL,
-            "docs_en_url": platform_discovery_settings.DOCS_EN_PUBLIC_URL,
-        },
+        page=HomePage(
+            service_name=platform_discovery_settings.APP_NAME,
+            eyebrow="FastAPI - DDD - Clean Architecture",
+            description=(
+                "AtlasCore is a backend foundation with product APIs, platform APIs, local infrastructure, "
+                "MkDocs documentation and a Core API that already exposes a verticalized library domain."
+            ),
+            actions=(
+                HomeAction(
+                    label="Core Swagger",
+                    url=platform_discovery_settings.SERVICE_DOCS_PATH,
+                    primary=True,
+                ),
+                HomeAction(
+                    label="Core ReDoc",
+                    url=platform_discovery_settings.SERVICE_REDOC_PATH,
+                ),
+                HomeAction(
+                    label="MkDocs PT-BR",
+                    url=platform_discovery_settings.DOCS_PT_PUBLIC_URL,
+                ),
+                HomeAction(
+                    label="MkDocs EN",
+                    url=platform_discovery_settings.DOCS_EN_PUBLIC_URL,
+                ),
+            ),
+            sections=(
+                HomeSection(
+                    title="API runtimes",
+                    description=(
+                        "Each backend has its own port. Online services expose Swagger/ReDoc links; "
+                        "offline services still show the expected local address."
+                    ),
+                    cards=tuple(api_services),
+                    columns=5,
+                ),
+                HomeSection(
+                    title="Project documentation",
+                    description=(
+                        "MkDocs runs separately from the APIs so the architecture guide can be served "
+                        "while backends are started and stopped independently."
+                    ),
+                    cards=tuple(documentation_sites),
+                    columns=2,
+                ),
+            ),
+        ),
     )
