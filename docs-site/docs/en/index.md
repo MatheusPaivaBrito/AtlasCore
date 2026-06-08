@@ -6,9 +6,9 @@ It combines product APIs, platform APIs, a planned worker runtime, a shared kern
 
 ## Current State
 
-The most concrete service right now is `core_api`.
+The most concrete services right now are `core_api` and `auth_api`.
 
-It already has:
+`core_api` already has:
 
 - Postgres connectivity through SQLAlchemy;
 - Alembic owned by `core_api`;
@@ -21,6 +21,18 @@ It already has:
 - a CRUD route factory for simple resources.
 - a shared structured error contract registered by every API;
 - settings split between Core database/cache concerns and platform discovery concerns.
+
+`auth_api` already has:
+
+- its own `atlas_auth` database;
+- user CRUD;
+- bcrypt credentials;
+- JWT access/refresh tokens;
+- HTTP-only cookies;
+- Redis sessions;
+- device limits;
+- RBAC through `domain:action` permissions;
+- FastAPI guards for protected routes.
 
 ## Service Groups
 

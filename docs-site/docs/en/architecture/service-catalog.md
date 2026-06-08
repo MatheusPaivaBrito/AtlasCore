@@ -4,7 +4,7 @@
 
 ### `auth_api`
 
-Identity and security boundary.
+Identity, credentials, JWT, Redis sessions and RBAC boundary.
 
 Modules:
 

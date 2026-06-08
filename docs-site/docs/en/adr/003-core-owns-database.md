@@ -1,4 +1,4 @@
-# ADR 003 - Core API Owns the Database
+# ADR 003 - Services Own Their Database Migrations
 
 ## Status
 
@@ -6,11 +6,18 @@ Accepted.
 
 ## Decision
 
-`core_api` owns Postgres migrations. Alembic lives inside `apps/core_api`.
+Each service that owns a relational schema owns its own Alembic setup.
+
+Current owners:
+
+| Service | Database | Alembic location |
+| --- | --- | --- |
+| `core_api` | `atlas_core` | `apps/core_api/alembic/` |
+| `auth_api` | `atlas_auth` | `apps/auth_api/alembic/` |
 
 ## Why
 
-The service that owns the relational schema should own the migration lifecycle.
+The service that owns a relational schema should own that migration lifecycle.
 
 ## Consequences
 
@@ -18,7 +25,9 @@ Positive:
 
 - Ownership is obvious.
 - Other APIs do not appear to own the same schema.
+- Auth can evolve identity tables without coupling itself to Core migrations.
 
 Tradeoff:
 
-- If another service later owns a database, it needs its own migration setup.
+- More than one Alembic setup exists in the monorepo.
+- Makefile commands must be explicit, such as `make migrate` and `make migrate-auth`.

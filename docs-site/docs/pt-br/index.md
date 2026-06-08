@@ -6,9 +6,9 @@ Ele possui APIs de produto, APIs de plataforma, um worker planejado, um shared k
 
 ## Estado atual
 
-A parte mais concreta neste momento e o `core_api`.
+As partes mais concretas neste momento sao `core_api` e `auth_api`.
 
-Ele ja tem:
+`core_api` ja tem:
 
 - conexao com Postgres via SQLAlchemy;
 - Alembic dentro do proprio `core_api`;
@@ -21,6 +21,18 @@ Ele ja tem:
 - fabrica de rotas CRUD para recursos simples.
 - contrato estruturado de erro registrado por todas as APIs;
 - settings separados entre banco/cache da Core e descoberta da plataforma.
+
+`auth_api` ja tem:
+
+- banco proprio `atlas_auth`;
+- CRUD de usuarios;
+- credenciais bcrypt;
+- JWT access/refresh;
+- cookies HTTP-only;
+- sessoes em Redis;
+- limite de dispositivos;
+- RBAC por permissoes `domain:action`;
+- guards FastAPI para rotas protegidas.
 
 ## APIs de produto
 

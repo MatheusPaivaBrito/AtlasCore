@@ -1,24 +1,398 @@
 # Auth API
 
-Responsabilidade: **identidade e segurança**.
+Responsabilidade: **identidade, credenciais, sessões e autorização**.
+
+`auth_api` é a fronteira de segurança do AtlasCore. Ele não é apenas uma tela de login: ele possui o banco de identidade, hash de senha, emissão de JWT, sessão em Redis, controle de dispositivos e RBAC por permissão.
+
+## Escopo funcional atual
+
+Hoje o Auth já possui:
+
+- banco Postgres próprio chamado `atlas_auth`;
+- migrações Alembic dentro de `apps/auth_api`;
+- CRUD completo de usuários;
+- senha com bcrypt via `pwdlib`;
+- `access_token` e `refresh_token` com chaves separadas;
+- cookies HTTP-only para access/refresh token;
+- suporte a `Authorization: Bearer <token>`;
+- sessões em Redis com namespace `auth`;
+- limite de dispositivos por usuário;
+- `token_version` para revogar sessões/tokens antigos;
+- tabela de permissões por usuário;
+- guards FastAPI para usuário autenticado e permissão específica;
+- seed idempotente com usuários e permissões de demo.
+
+## Banco de dados
+
+Banco:
+
+```text
+atlas_auth
+```
+
+Tabelas atuais:
+
+| Tabela | Motivo |
+| --- | --- |
+| `auth_users` | Perfil de identidade, status, soft delete, `token_version` e metadados de último login. |
+| `auth_user_credentials` | Hash bcrypt da senha separado da leitura normal de usuário. |
+| `auth_user_permissions` | Permissões RBAC por usuário no formato `domain:action`. |
+| `alembic_version` | Controle de versão do schema do Auth. |
+
+Campos importantes de `auth_users`:
+
+| Campo | Motivo |
+| --- | --- |
+| `email` | Identificador de login. |
+| `full_name` | Nome exibível. |
+| `is_active` | Bloqueia login e uso de token quando falso. |
+| `is_superuser` | Bypass administrativo para permissões. |
+| `token_version` | Revogação global de tokens/sessões do usuário. |
+| `deleted_at` | Soft delete. |
+| `last_login_at` | Auditoria simples do último login. |
+| `last_login_ip` | IP usado no último login. |
+| `last_login_user_agent` | User agent usado no último login. |
+
+## Migrações
+
+Arquivos principais:
+
+```text
+apps/auth_api/alembic.ini
+apps/auth_api/alembic/env.py
+apps/auth_api/alembic/versions/20260607_0001_auth_schema.py
+apps/auth_api/alembic/versions/20260607_0002_auth_rbac_sessions.py
+```
+
+Comando:
+
+```bash
+make migrate-auth
+```
+
+A migração `0001` cria usuários e credenciais. A migração `0002` adiciona metadados de login e permissões RBAC.
 
 ## Módulos
 
 ```text
-users
-auth
-sessions
-access_control
+modules/
+  users/
+  auth/
+  sessions/
+  access_control/
 ```
 
-## Estrutura
+| Módulo | Papel |
+| --- | --- |
+| `users` | CRUD de usuários, hash inicial de senha, soft delete e restore. |
+| `auth` | Login, refresh, logout, JWT, cookies e guards. |
+| `sessions` | Sessões em Redis, device id e limite de dispositivos. |
+| `access_control` | Permissões `domain:action`, sincronização e consulta de perfil de acesso. |
+
+## Estrutura de arquivos importante
 
 ```text
-main.py
-bootstrap/
-infrastructure/
-modules/
-shared/
+apps/auth_api/src/auth_api/
+  infrastructure/
+    database/
+    settings.py
+  modules/
+    auth/
+      application/
+        cookies.py
+        guards.py
+        passwords.py
+        tokens.py
+      presentation/
+        routes.py
+        schemas.py
+    sessions/
+      application/
+        service.py
+        stores.py
+      presentation/
+        routes.py
+        schemas.py
+    access_control/
+      application/
+        permissions.py
+      domain/
+        permission_entity.py
+      presentation/
+        routes.py
+        schemas.py
+    users/
+      domain/
+        user_entity.py
+      presentation/
+        routes.py
+        schemas.py
 ```
 
-Essa API segue DDD + Clean Architecture com módulos verticalizados.
+## Fluxo de login
+
+Rota:
+
+```http
+POST /auth/login
+```
+
+Entrada:
+
+```json
+{
+  "email": "admin@atlas.local",
+  "password": "AtlasAdmin123!"
+}
+```
+
+Fluxo:
+
+1. Busca o usuário por e-mail.
+2. Rejeita usuário deletado, sem credencial ou inativo.
+3. Verifica a senha com bcrypt.
+4. Gera um `device_id` usando usuário, `user-agent` e IP.
+5. Usa esse `device_id` como `session_id`.
+6. Gera `access_token` e `refresh_token`.
+7. Salva a sessão no Redis.
+8. Atualiza metadados de último login.
+9. Define cookies HTTP-only.
+10. Retorna usuário, tokens, sessão e permissões.
+
+Resposta inclui:
+
+```json
+{
+  "authenticated": true,
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "bearer",
+  "session_id": "...",
+  "permissions": [],
+  "user": {}
+}
+```
+
+## JWT
+
+O Auth emite dois tokens:
+
+| Token | Chave | TTL padrão | Uso |
+| --- | --- | --- | --- |
+| `access_token` | `AUTH_JWT_ACCESS_TOKEN_SECRET_KEY` | 15 minutos | Autorizar chamadas de API. |
+| `refresh_token` | `AUTH_JWT_REFRESH_TOKEN_SECRET_KEY` | 7 dias | Renovar sessão sem reenviar senha. |
+
+Payload principal:
+
+```json
+{
+  "iss": "atlascore.auth",
+  "sub": "user-uuid",
+  "email": "admin@atlas.local",
+  "type": "access",
+  "token_version": 1,
+  "session_id": "device-session-id",
+  "jti": "token-uuid",
+  "iat": 0,
+  "nbf": 0,
+  "exp": 0
+}
+```
+
+`type` impede usar refresh token como access token. `token_version` permite invalidar tokens emitidos antes de troca de senha, soft delete ou logout global.
+
+## Cookies e Bearer token
+
+O Auth aceita token por dois caminhos:
+
+| Origem | Quando usar |
+| --- | --- |
+| Cookie `access_token` | Fluxo browser com cookies HTTP-only. |
+| Header `Authorization: Bearer <token>` | Swagger, clientes HTTP e chamadas explicitas. |
+
+Cookies são definidos por:
+
+```text
+modules/auth/application/cookies.py
+```
+
+## Redis e sessões
+
+Sessões usam Redis com `orjson`.
+
+Namespace padrão:
+
+```text
+auth
+```
+
+Chaves:
+
+| Chave | Conteúdo |
+| --- | --- |
+| `auth:{user_id}:session:{session_id}` | Sessão ativa com refresh token, user agent, IP e `token_version`. |
+| `auth:{user_id}:sessions` | Lista ordenada de sessões do usuário para aplicar limite de dispositivos. |
+
+O serviço fica em:
+
+```text
+modules/sessions/application/service.py
+```
+
+`AUTH_MAX_DEVICES` controla quantas sessões simultâneas um usuário pode manter. Quando o limite é ultrapassado, a sessão mais antiga é removida.
+
+## Refresh token
+
+Rota:
+
+```http
+POST /auth/refresh
+```
+
+O refresh:
+
+1. lê o cookie `refresh_token`;
+2. valida assinatura e `type=refresh`;
+3. confirma que a sessão existe no Redis;
+4. compara refresh token salvo na sessão;
+5. compara `token_version` do token, sessão e usuário;
+6. emite novo access token e novo refresh token;
+7. atualiza a sessão no Redis.
+
+## Logout
+
+Rotas:
+
+| Método | Path | Efeito |
+| --- | --- | --- |
+| `POST` | `/auth/logout` | Remove a sessão atual e limpa cookies. |
+| `POST` | `/auth/logout-all` | Incrementa `token_version`, remove todas as sessões e limpa cookies. |
+
+`logout-all` invalida todos os tokens antigos do usuário porque muda o `token_version`.
+
+## RBAC
+
+Permissões seguem o formato:
+
+```text
+domain:action
+```
+
+Exemplos:
+
+```text
+users:read
+users:write
+users:delete
+access_control:read
+access_control:write
+sessions:read
+sessions:delete
+```
+
+O guard usa:
+
+```python
+auth_guard.require_permission(domain="users", action="write")
+```
+
+Regra:
+
+- `is_superuser=True` passa por qualquer permissão;
+- usuários comuns precisam ter a permissão exata;
+- usuário inativo não passa nem com token válido;
+- token com sessão ausente no Redis é recusado;
+- divergência de `token_version` revoga a sessão.
+
+## Bootstrap do primeiro usuário
+
+Existe uma exceção intencional: se `auth_users` estiver vazio, `POST /users` permite criar o primeiro usuário sem token.
+
+Isso facilita subir o projeto localmente do zero.
+
+Depois que existir pelo menos um usuário, `POST /users` passa a exigir:
+
+```text
+users:write
+```
+
+## Rotas atuais
+
+### Auth
+
+| Método | Path | Objetivo |
+| --- | --- | --- |
+| `POST` | `/auth/login` | Validar e-mail/senha, criar sessão e emitir tokens. |
+| `POST` | `/auth/refresh` | Rotacionar access/refresh token usando sessão ativa. |
+| `POST` | `/auth/logout` | Revogar sessão atual. |
+| `POST` | `/auth/logout-all` | Revogar todas as sessões do usuário. |
+
+### Users
+
+| Método | Path | Permissão | Objetivo |
+| --- | --- | --- | --- |
+| `POST` | `/users` | `users:write` após bootstrap | Criar usuário com senha bcrypt e permissões opcionais. |
+| `GET` | `/users` | `users:read` | Listar usuários com filtros. |
+| `GET` | `/users/{user_id}` | `users:read` | Buscar um usuário. |
+| `PATCH` | `/users/{user_id}` | `users:write` | Editar perfil, senha e permissões. |
+| `DELETE` | `/users/{user_id}` | `users:delete` | Soft delete e revogação de sessões. |
+| `POST` | `/users/{user_id}/restore` | `users:write` | Restaurar usuário removido logicamente. |
+
+### Sessions
+
+| Método | Path | Objetivo |
+| --- | --- | --- |
+| `GET` | `/sessions/me` | Listar sessões do usuário autenticado. |
+| `DELETE` | `/sessions/{session_id}` | Revogar uma sessão do usuário autenticado. |
+| `DELETE` | `/sessions` | Revogar todas as sessões do usuário autenticado. |
+
+### Access Control
+
+| Método | Path | Permissão | Objetivo |
+| --- | --- | --- | --- |
+| `GET` | `/access-control/me` | Usuário autenticado | Ver perfil de acesso atual. |
+| `GET` | `/access-control/users/{user_id}/permissions` | `access_control:read` | Ver permissões de outro usuário. |
+| `PUT` | `/access-control/users/{user_id}/permissions` | `access_control:write` | Substituir permissões de outro usuário. |
+
+## Comandos locais
+
+```bash
+make migrate-auth
+make seed-auth
+make dev-auth
+```
+
+## Seed
+
+O seed cria ou atualiza:
+
+| E-mail | Senha | Estado | Permissões |
+| --- | --- | --- | --- |
+| `admin@atlas.local` | `AtlasAdmin123!` | Ativo, superuser | 7 permissões administrativas. |
+| `librarian@atlas.local` | `AtlasUser123!` | Ativo | `users:read`, `sessions:read`. |
+| `blocked@atlas.local` | `AtlasBlocked123!` | Inativo | Nenhuma. |
+
+O seed é idempotente. Ele pode ser rodado de novo sem duplicar usuários ou permissões.
+
+## Como testar no Swagger
+
+1. Suba dependências e Auth.
+2. Rode `make migrate-auth`.
+3. Rode `make seed-auth`.
+4. Acesse `http://localhost:8001/docs`.
+5. Faça `POST /auth/login` com `admin@atlas.local`.
+6. Copie `access_token`.
+7. Clique em `Authorize`.
+8. Informe:
+
+```text
+Bearer <access_token>
+```
+
+Depois disso, as rotas protegidas podem ser testadas pelo Swagger.
+
+## O que ainda não foi integrado
+
+`core_api` ainda não depende do Auth para proteger o domínio de livraria.
+
+A decisão atual é deixar o Auth sólido primeiro. Depois, a Core pode validar tokens emitidos pelo Auth ou chamar uma rota interna de autorização, dependendo da estratégia escolhida para comunicação entre backends.

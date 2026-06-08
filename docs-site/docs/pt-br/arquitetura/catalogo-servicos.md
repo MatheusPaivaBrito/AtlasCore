@@ -2,7 +2,7 @@
 
 | Serviço | Grupo | Responsabilidade |
 | --- | --- | --- |
-| `auth_api` | Produto | Identidade e segurança. |
+| `auth_api` | Produto | Identidade, credenciais, JWT, sessoes Redis e RBAC. |
 | `core_api` | Produto | Negócio, Postgres, livraria e assets públicos. |
 | `eventing_api` | Plataforma | Kafka, contratos, outbox, event sourcing. |
 | `notification_api` | Plataforma | Slack, e-mail, templates, entregas. |

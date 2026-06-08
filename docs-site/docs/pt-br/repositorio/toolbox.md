@@ -22,13 +22,15 @@ toolbox/
 
 Seeds ficam agrupados por servico porque cada servico pode ter seu proprio banco.
 
-Seed executavel atual:
+Seeds executaveis atuais:
 
 ```bash
 make seed-core
+make seed-auth
+make seed-all
 ```
 
-Esse comando executa:
+Seed da Core:
 
 ```text
 toolbox/seeds/core_api/library_seed.py
@@ -45,19 +47,25 @@ Ele cria dados mockados para:
 
 O seed e idempotente e usa chaves naturais como `library.code`, `book.isbn` e `reader.email`.
 
-## Direcao da Auth API
+Seed do Auth:
 
-`toolbox/seeds/auth_api/` documenta a fronteira futura de seed da Auth.
-
-Quando a persistencia de Auth existir, ela deve popular dados de identidade e controle de acesso como:
+```text
+toolbox/seeds/auth_api/user_seed.py
+```
 
 - users;
 - credentials;
-- roles;
-- permissions;
-- associacoes de roles;
-- sessions;
-- estado de refresh token;
-- `token_version`.
+- `token_version`;
+- permissions.
+
+O seed cria:
+
+| E-mail | Estado | Permissoes |
+| --- | --- | --- |
+| `admin@atlas.local` | Ativo, superuser | `users:*`, `sessions:*`, `access_control:*`. |
+| `librarian@atlas.local` | Ativo | `users:read`, `sessions:read`. |
+| `blocked@atlas.local` | Inativo | Nenhuma. |
+
+Sessoes e refresh tokens nao sao populados por seed porque sao estado runtime. Eles nascem no Redis quando alguem faz login.
 
 Dados de Auth nao devem se misturar com dados de reader da Core. Auth sera dona de identidade; Core sera dona de conceitos de negocio como leitor/cliente quando necessario.

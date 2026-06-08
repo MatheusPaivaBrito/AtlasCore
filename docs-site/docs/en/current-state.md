@@ -37,9 +37,9 @@ Structural folders are not Python packages unless they expose importable code. E
 
 ## Functional Today
 
-The most complete service today is `core_api`.
+Both product services now have real functional slices.
 
-It has:
+`core_api` has:
 
 - FastAPI app factory;
 - custom dark Swagger UI;
@@ -54,15 +54,33 @@ It has:
 - query routes with text search and exact filters;
 - `public_assets` as a Core module for public images/documents;
 - SQLAlchemy timestamp and soft-delete mixins;
-- runtime settings separated between Core database/cache settings and platform discovery settings.
-- a toolbox seed for Core API mocked library data.
+- runtime settings separated between Core database/cache settings and platform discovery settings;
+- toolbox seeds for Core library data.
+
+`auth_api` has:
+
+- a dedicated Postgres database named `atlas_auth`;
+- Alembic inside the service that owns the schema;
+- user CRUD;
+- credentials in a separate table with bcrypt hashes;
+- login with `access_token` and `refresh_token`;
+- HTTP-only cookies;
+- Bearer token support;
+- Redis sessions serialized with `orjson`;
+- per-user device limits;
+- refresh token rotation through the active session;
+- current-session logout and global logout;
+- `token_version` for revocation;
+- RBAC through the `auth_user_permissions` table;
+- FastAPI guards for authenticated users and explicit permissions;
+- demo user seed with permissions.
 
 ## Services
 
 | Runtime | Status | Responsibility |
 | --- | --- | --- |
 | `core_api` | Functional first slice | Business API, Postgres owner, library CRUD, public assets. |
-| `auth_api` | Scaffolded API boundary | Identity, authentication, sessions and access control. |
+| `auth_api` | Functional identity API | User CRUD, bcrypt credentials, JWT access/refresh, Redis sessions, RBAC and `atlas_auth` ownership. |
 | `eventing_api` | Scaffolded API boundary | Kafka-facing contracts, schemas, topics, streams, outbox and projections. |
 | `notification_api` | Scaffolded API boundary | E-mail, Slack, templates, channels and delivery attempts. |
 | `observability_api` | Scaffolded API boundary | Incidents, alerts, dashboards, log queries and releases. |
@@ -137,6 +155,18 @@ Public URLs are for browsers, docs and humans. Internal URLs are for service-to-
 
 Kafka settings remain in `.env` and Docker Compose because Kafka is part of the platform plan. When `eventing_api` starts using Kafka adapters for real, those runtime settings should move into `eventing_api/infrastructure/settings.py`.
 
+`auth_api.infrastructure.settings.AuthSettings` owns Auth-specific configuration for:
+
+- database `atlas_auth`;
+- Redis DB/namespace `auth`;
+- access and refresh token secrets;
+- JWT algorithm and issuer;
+- access and refresh token TTLs;
+- cookie policy;
+- device limit;
+- bcrypt rounds;
+- Auth CORS policy.
+
 ## Documentation
 
 Docs are split into two MkDocs configs:
@@ -153,6 +183,8 @@ The test suite currently covers:
 - health endpoints for every API;
 - cross-service health contract;
 - cross-service error contract;
+- Auth API CRUD and login;
+- Auth guards, in-memory test sessions and route registration;
 - Core API docs UI;
 - API CORS contracts;
 - Core API route registration;
@@ -175,15 +207,25 @@ make seed-core
 
 This runs `toolbox/seeds/core_api/library_seed.py` and populates the Core database with mocked library data.
 
-Auth API has a documented seed boundary under `toolbox/seeds/auth_api/`, but no executable seed yet because Auth persistence is not implemented.
+Auth API also has an executable seed:
+
+```bash
+make seed-auth
+```
+
+This runs `toolbox/seeds/auth_api/user_seed.py` and creates demo users with bcrypt-hashed credentials and RBAC permissions:
+
+- `admin@atlas.local`: superuser with administrative permissions;
+- `librarian@atlas.local`: user and session read permissions;
+- `blocked@atlas.local`: inactive and permissionless.
 
 ## Next Sensible Steps
 
 The next implementation steps should be:
 
-- finish a real database-backed CRUD use case beyond route registration tests;
-- add auth primitives in `auth_api`;
-- decide when Redis caching becomes real instead of planned;
+- protect `core_api` through Auth;
+- decide the final backend-to-backend authorization strategy;
+- add real Redis caching to `core_api` when behavior justifies it;
 - wire Kafka only when event/outbox behavior exists;
 - add service-specific settings to each API when each one starts using real providers;
 - keep documentation updated as soon as a placeholder becomes code.

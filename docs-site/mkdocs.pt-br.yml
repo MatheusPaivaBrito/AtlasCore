@@ -57,6 +57,7 @@ nav:
       - Visão Arquitetural: arquitetura/visao-geral.md
       - Catálogo de Serviços: arquitetura/catalogo-servicos.md
       - Fronteiras: arquitetura/fronteiras.md
+      - Segurança e RBAC: arquitetura/seguranca-rbac.md
       - DDD e Clean Architecture: arquitetura/ddd-clean-architecture.md
       - Tratamento de Erros: arquitetura/tratamento-erros.md
   - Serviços:

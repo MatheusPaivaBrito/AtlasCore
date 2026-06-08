@@ -37,9 +37,9 @@ Pastas estruturais nao viram pacote Python quando nao expõem codigo importavel.
 
 ## Funcional hoje
 
-O servico mais completo hoje e o `core_api`.
+Os dois servicos de produto ja possuem fatias funcionais reais.
 
-Ele possui:
+`core_api` possui:
 
 - factory FastAPI;
 - Swagger UI escuro customizado;
@@ -54,15 +54,33 @@ Ele possui:
 - queries com busca textual e filtros exatos;
 - modulo `public_assets` para imagens/documentos publicos;
 - mixins SQLAlchemy de timestamp e soft delete;
-- settings separados entre configuracao de banco/cache da Core e descoberta da plataforma.
-- seed no toolbox para popular dados mockados da livraria da Core API.
+- settings separados entre configuracao de banco/cache da Core e descoberta da plataforma;
+- seeds no toolbox para popular dados mockados da livraria.
+
+`auth_api` possui:
+
+- banco Postgres proprio chamado `atlas_auth`;
+- Alembic dentro do servico dono do schema;
+- CRUD de usuarios;
+- credenciais em tabela separada com hash bcrypt;
+- login com `access_token` e `refresh_token`;
+- cookies HTTP-only;
+- suporte a Bearer token;
+- sessoes em Redis serializadas com `orjson`;
+- limite de dispositivos por usuario;
+- refresh token rotacionado pela sessao ativa;
+- logout de sessao atual e logout global;
+- `token_version` para revogacao;
+- RBAC com tabela `auth_user_permissions`;
+- guards FastAPI para usuario autenticado e permissao especifica;
+- seed de usuarios demo com permissoes.
 
 ## Servicos
 
 | Runtime | Estado | Responsabilidade |
 | --- | --- | --- |
 | `core_api` | Primeiro slice funcional | API de negocio, dona do Postgres, CRUD de livraria e assets publicos. |
-| `auth_api` | Fronteira preparada | Identidade, autenticacao, sessoes e controle de acesso. |
+| `auth_api` | API de identidade funcional | CRUD de usuarios, credenciais bcrypt, JWT access/refresh, sessoes Redis, RBAC e ownership do `atlas_auth`. |
 | `eventing_api` | Fronteira preparada | Contratos Kafka, schemas, topicos, streams, outbox e projections. |
 | `notification_api` | Fronteira preparada | E-mail, Slack, templates, canais e tentativas de entrega. |
 | `observability_api` | Fronteira preparada | Incidentes, alertas, dashboards, consultas de logs e releases. |
@@ -137,6 +155,18 @@ URLs publicas sao para browser, documentacao e pessoas. URLs internas sao para c
 
 As variaveis Kafka continuam no `.env` e Docker Compose porque Kafka ainda faz parte do plano de plataforma. Quando `eventing_api` comecar a usar adapters Kafka de verdade, esses settings devem nascer em `eventing_api/infrastructure/settings.py`.
 
+`auth_api.infrastructure.settings.AuthSettings` possui configuracao propria para:
+
+- database `atlas_auth`;
+- Redis DB/namespace `auth`;
+- secrets de access e refresh token;
+- algoritmo e issuer JWT;
+- TTL de access e refresh token;
+- politica de cookie;
+- limite de dispositivos;
+- bcrypt rounds;
+- CORS do Auth.
+
 ## Documentacao
 
 A documentacao usa dois arquivos MkDocs:
@@ -153,6 +183,8 @@ A suite cobre hoje:
 - health endpoints de todas as APIs;
 - contrato de health entre servicos;
 - contrato de erro entre servicos;
+- CRUD e login do Auth API;
+- guards, sessoes em memoria de teste e rotas registradas do Auth;
 - docs UI da Core API;
 - contratos de CORS das APIs;
 - registro de rotas da Core API;
@@ -175,15 +207,25 @@ make seed-core
 
 Esse comando executa `toolbox/seeds/core_api/library_seed.py` e popula o banco da Core com dados mockados de livraria.
 
-A Auth API ja possui uma fronteira documentada em `toolbox/seeds/auth_api/`, mas ainda nao possui seed executavel porque a persistencia de Auth ainda nao foi implementada.
+A Auth API tambem possui seed executavel:
+
+```bash
+make seed-auth
+```
+
+Esse comando executa `toolbox/seeds/auth_api/user_seed.py` e cria usuarios demo com credenciais hashadas em bcrypt e permissoes RBAC:
+
+- `admin@atlas.local`: superuser com permissoes administrativas;
+- `librarian@atlas.local`: leitura de usuarios e sessoes;
+- `blocked@atlas.local`: inativo e sem permissoes.
 
 ## Proximos passos sensatos
 
 Os proximos passos de implementacao deveriam ser:
 
-- terminar um CRUD real com banco alem dos testes de registro de rota;
-- adicionar primitivas de auth em `auth_api`;
-- decidir quando Redis vira cache real;
+- proteger `core_api` usando Auth;
+- decidir a estrategia final de autorizacao entre backends;
+- adicionar cache Redis real no `core_api` quando houver comportamento que justifique;
 - ligar Kafka apenas quando houver comportamento real de evento/outbox;
 - adicionar settings especificos em cada API quando cada uma comecar a usar providers reais;
 - manter a documentacao atualizada sempre que um placeholder virar codigo.

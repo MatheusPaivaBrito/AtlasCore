@@ -1,8 +1,15 @@
 # Postgres and Alembic
 
-Postgres is owned by `core_api`.
+Postgres is shared infrastructure, but each API owns its own schema/database boundary.
 
-## Why Alembic Lives Inside `core_api`
+Today:
+
+| Service | Database | Purpose |
+| --- | --- | --- |
+| `core_api` | `atlas_core` | Business relational model and library domain. |
+| `auth_api` | `atlas_auth` | Identity, credentials and RBAC permissions. |
+
+## Why Alembic Lives Inside Each Owner Service
 
 Migrations belong to the service that owns the schema.
 
@@ -15,6 +22,15 @@ apps/core_api/
     versions/
       20260606_0001_core_schema.py
       20260606_0002_library_soft_delete_sections.py
+
+apps/auth_api/
+  alembic.ini
+  alembic/
+    env.py
+    script.py.mako
+    versions/
+      20260607_0001_auth_schema.py
+      20260607_0002_auth_rbac_sessions.py
 ```
 
 This is better than root-level Alembic because it makes ownership explicit.
@@ -65,4 +81,8 @@ make revision name="describe change"
 
 `make migrate` runs `alembic upgrade head` using `apps/core_api/alembic.ini`.
 
+`make migrate-auth` runs `alembic upgrade head` using `apps/auth_api/alembic.ini`.
+
 Alembic reads the database URL through `core_api.infrastructure.settings.settings`, so migrations use the same configuration path as the application.
+
+Auth migrations read the database URL through `auth_api.infrastructure.settings.settings`.

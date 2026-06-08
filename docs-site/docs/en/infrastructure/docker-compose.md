@@ -14,8 +14,8 @@ By default this starts only:
 
 | Service | Purpose |
 | --- | --- |
-| `postgres` | Relational database for `core_api`. |
-| `redis` | Cache/session/rate-limit/short-lived state. |
+| `postgres` | Relational database for `core_api` and `auth_api`. |
+| `redis` | Auth sessions, refresh-token state, cache/rate-limit/short-lived state. |
 
 Kafka, product APIs, platform APIs, Loki and Grafana do not start by default.
 
@@ -24,7 +24,7 @@ Kafka, product APIs, platform APIs, Loki and Grafana do not start by default.
 | Profile | Starts |
 | --- | --- |
 | `core` | `core-api` with Postgres and Redis. |
-| `auth` | `auth-api` with Redis. |
+| `auth` | `auth-api` with Postgres and Redis. |
 | `eventing` | `eventing-api` with Kafka and Postgres. |
 | `notifications` | `notification-api` with Redis. |
 | `observability` | `observability-api` with Loki and Grafana. |

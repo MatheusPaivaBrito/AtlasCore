@@ -100,12 +100,16 @@ Run the `core_api` migrations:
 
 ```bash
 make migrate
+make migrate-auth
+make migrate-all
 ```
 
-Seed the Core API library demo data:
+Seed demo data:
 
 ```bash
 make seed-core
+make seed-auth
+make seed-all
 ```
 
 Seeds and local operational scripts live in `toolbox/`. Automated tests stay in `tests/`.
@@ -153,13 +157,20 @@ Important values:
 | `POSTGRES_HOST` | `localhost` |
 | `POSTGRES_PORT` | `5432` |
 | `POSTGRES_DB` | `atlas_core` |
+| `CORE_POSTGRES_DB` | `atlas_core` |
+| `AUTH_POSTGRES_DB` | `atlas_auth` |
+| `EVENTING_POSTGRES_DB` | `atlas_eventing` |
 | `POSTGRES_USER` | `atlas` |
 | `POSTGRES_PASSWORD` | `atlas` |
 | `REDIS_HOST` | `localhost` |
 | `REDIS_PORT` | `6379` |
 | `REDIS_DB` | `1` |
+| `CORE_REDIS_KEY_PREFIX` | `core` |
+| `AUTH_REDIS_KEY_PREFIX` | `auth` |
 | `DATABASE_URL` | Optional override, otherwise built by `core_api.infrastructure.settings` |
 | `REDIS_URL` | Optional override, otherwise built by `core_api.infrastructure.settings` |
+| `AUTH_DATABASE_URL` | Optional Auth database override |
+| `AUTH_REDIS_URL` | Optional Auth Redis override |
 | `CORE_API_PORT` | `8000` |
 | `AUTH_API_PORT` | `8001` |
 | `CORE_API_PUBLIC_URL` | `http://localhost:8000` |

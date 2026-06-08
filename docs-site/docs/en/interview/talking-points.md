@@ -26,7 +26,22 @@ A future modular monolith distribution can exist inside this same repository as 
 
 ## Database Ownership
 
-`core_api` owns Postgres and Alembic because it owns the relational business schema.
+Each service owns the database schema it is responsible for.
+
+- `core_api` owns `atlas_core` and the business relational schema.
+- `auth_api` owns `atlas_auth`, credentials, sessions contract and RBAC permissions.
+
+Alembic lives inside the owning service instead of the repository root.
+
+## Auth Security
+
+Auth does not rely on JWT alone. It combines:
+
+- short-lived access tokens;
+- refresh tokens;
+- Redis session state;
+- `token_version` revocation;
+- user-level `domain:action` permissions.
 
 ## Worker
 
