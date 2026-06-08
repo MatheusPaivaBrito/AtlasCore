@@ -23,6 +23,19 @@ x-atlas-cors: &atlas-cors
   OBSERVABILITY_API_CORS_ENABLED: ${OBSERVABILITY_API_CORS_ENABLED:-1}
   OBSERVABILITY_API_CORS_ALLOWED_ORIGINS: ${OBSERVABILITY_API_CORS_ALLOWED_ORIGINS:-}
 
+x-atlas-postgres-runtime: &atlas-postgres-runtime
+  POSTGRES_USER: ${POSTGRES_USER:-atlas}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atlas}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_ADMIN_DB: ${POSTGRES_ADMIN_DB:-postgres}
+  POSTGRES_DB: ${POSTGRES_DB:-atlas_core}
+
+x-atlas-redis-runtime: &atlas-redis-runtime
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  REDIS_DB: ${REDIS_DB:-1}
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -112,6 +125,49 @@ services:
       redis:
         condition: service_healthy
 
+  auth-migrate:
+    build:
+      context: .
+      dockerfile: apps/auth_api/dockerfile
+    profiles: ["jobs"]
+    environment:
+      <<: [*atlas-service-urls, *atlas-cors, *atlas-postgres-runtime, *atlas-redis-runtime]
+      SERVICE_NAME: auth_api
+      AUTH_POSTGRES_DB: ${AUTH_POSTGRES_DB:-atlas_auth}
+      AUTH_REDIS_DB: ${AUTH_REDIS_DB:-1}
+      AUTH_REDIS_KEY_PREFIX: ${AUTH_REDIS_KEY_PREFIX:-auth}
+    command: >
+      sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py auth_api
+      && poetry run alembic -c apps/auth_api/alembic.ini upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  auth-seed:
+    build:
+      context: .
+      dockerfile: apps/auth_api/dockerfile
+    profiles: ["jobs"]
+    environment:
+      <<: [*atlas-service-urls, *atlas-cors, *atlas-postgres-runtime, *atlas-redis-runtime]
+      SERVICE_NAME: auth_api
+      AUTH_POSTGRES_DB: ${AUTH_POSTGRES_DB:-atlas_auth}
+      AUTH_REDIS_DB: ${AUTH_REDIS_DB:-1}
+      AUTH_REDIS_KEY_PREFIX: ${AUTH_REDIS_KEY_PREFIX:-auth}
+    command: >
+      sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py auth_api
+      && poetry run alembic -c apps/auth_api/alembic.ini upgrade head
+      && poetry run python toolbox/seeds/auth_api/user_seed.py"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
   core-api:
     build:
       context: .
@@ -131,6 +187,49 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+
+  core-migrate:
+    build:
+      context: .
+      dockerfile: apps/core_api/dockerfile
+    profiles: ["jobs"]
+    environment:
+      <<: [*atlas-service-urls, *atlas-cors, *atlas-postgres-runtime, *atlas-redis-runtime]
+      SERVICE_NAME: core_api
+      CORE_POSTGRES_DB: ${CORE_POSTGRES_DB:-atlas_core}
+      CORE_REDIS_DB: ${CORE_REDIS_DB:-1}
+      CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-core}
+    command: >
+      sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py core_api
+      && poetry run alembic -c apps/core_api/alembic.ini upgrade head"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  core-seed:
+    build:
+      context: .
+      dockerfile: apps/core_api/dockerfile
+    profiles: ["jobs"]
+    environment:
+      <<: [*atlas-service-urls, *atlas-cors, *atlas-postgres-runtime, *atlas-redis-runtime]
+      SERVICE_NAME: core_api
+      CORE_POSTGRES_DB: ${CORE_POSTGRES_DB:-atlas_core}
+      CORE_REDIS_DB: ${CORE_REDIS_DB:-1}
+      CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-core}
+    command: >
+      sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py core_api
+      && poetry run alembic -c apps/core_api/alembic.ini upgrade head
+      && poetry run python toolbox/seeds/core_api/library_seed.py"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
 
   eventing-api:
     build:

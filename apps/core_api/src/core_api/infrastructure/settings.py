@@ -50,7 +50,7 @@ class CoreSettings(BaseSettings):
     # ------------------------------------
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
-    REDIS_DB: int = 1
+    REDIS_DB: int = Field(default=1, validation_alias=AliasChoices("CORE_REDIS_DB", "REDIS_DB"))
     REDIS_KEY_PREFIX: str = Field(default="core", validation_alias=AliasChoices("CORE_REDIS_KEY_PREFIX", "REDIS_KEY_PREFIX"))
     REDIS_URL_OVERRIDE: str | None = Field(
         default=None,

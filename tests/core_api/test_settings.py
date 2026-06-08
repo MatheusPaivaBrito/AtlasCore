@@ -12,7 +12,7 @@ def test_settings_builds_connection_values_from_env_parts() -> None:
         CORE_POSTGRES_DB="atlas_core_test",
         REDIS_HOST="redis",
         REDIS_PORT=6380,
-        REDIS_DB=2,
+        CORE_REDIS_DB=2,
         CORE_REDIS_KEY_PREFIX="core",
         AUTH_API_INTERNAL_URL="http://auth-api:8000",
         AUTH_INTROSPECTION_TIMEOUT_SECONDS=0.7,

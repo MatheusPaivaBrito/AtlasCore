@@ -16,6 +16,7 @@ COPY apps/core_api/src ./apps/core_api/src
 COPY apps/core_api/alembic.ini ./apps/core_api/alembic.ini
 COPY apps/core_api/alembic ./apps/core_api/alembic
 COPY packages ./packages
+COPY toolbox ./toolbox
 
 EXPOSE 8000
 

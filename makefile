@@ -11,11 +11,16 @@ export
 # TOOLING
 # ------------------------------------
 COMPOSE = docker compose
+COMPOSE_JOB_RUN = $(COMPOSE) --profile jobs run --rm
 CORE_ALEMBIC = apps/core_api/alembic.ini
 AUTH_ALEMBIC = apps/auth_api/alembic.ini
 DOCS_PT = docs-site/mkdocs.pt-br.yml
 DOCS_EN = docs-site/mkdocs.en.yml
 ENSURE_RUNTIME = poetry run python toolbox/checks/ensure_runtime_dependencies.py
+CORE_MIGRATE_JOB = core-migrate
+AUTH_MIGRATE_JOB = auth-migrate
+CORE_SEED_JOB = core-seed
+AUTH_SEED_JOB = auth-seed
 
 # ------------------------------------
 # RUNTIME
@@ -58,8 +63,10 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 	ensure ensure-all ensure-core ensure-auth ensure-eventing ensure-notifications ensure-observability \
 	dev dev-all dev-core dev-auth dev-eventing dev-notifications dev-observability \
 	prod prod-all prod-core prod-auth prod-eventing prod-notifications prod-observability \
-	migrate migrate-core migrate-auth migrate-all revision revision-core revision-auth \
-	seed seed-core seed-auth seed-all docs docs-pt docs-en docs-all test
+	migrate migrate-core migrate-auth migrate-all migrate-local migrate-core-local migrate-auth-local \
+	revision revision-core revision-auth \
+	seed seed-core seed-auth seed-all seed-local seed-core-local seed-auth-local \
+	docs docs-pt docs-en docs-all test
 
 # ------------------------------------
 # HELP
@@ -71,9 +78,9 @@ help makehelp:
 	@echo "  make help                 Show this command menu"
 	@echo "  make makehelp             Alias for make help"
 	@echo ""
-	@echo "Docker Compose"
+	@echo "Docker Compose / Infrastructure"
 	@echo "  make compose              Start default services: Postgres and Redis"
-	@echo "  make compose-dev          Start every container profile"
+	@echo "  make compose-dev          Start dev runtime containers"
 	@echo "  make compose-apis         Start API containers"
 	@echo "  make compose-platform     Start platform containers"
 	@echo "  make compose-core         Start core_api container with infra"
@@ -91,7 +98,7 @@ help makehelp:
 	@echo "  make ensure-notifications Ensure Redis"
 	@echo "  make ensure-observability Ensure Loki and Grafana"
 	@echo ""
-	@echo "Local Development"
+	@echo "Local API Development"
 	@echo "  make dev                  Run core_api locally on port $(CORE_API_PORT)"
 	@echo "  make dev-all              Run every API locally with uvicorn reload"
 	@echo "  make dev-core             Run core_api locally on port $(CORE_API_PORT)"
@@ -100,25 +107,29 @@ help makehelp:
 	@echo "  make dev-notifications    Run notification_api locally on port $(NOTIFICATION_API_PORT)"
 	@echo "  make dev-observability    Run observability_api locally on port $(OBSERVABILITY_API_PORT)"
 	@echo ""
-	@echo "Production-Like Runtime"
+	@echo "Local Production-Like Runtime"
 	@echo "  make prod                 Run core_api with gunicorn on port $(CORE_API_PORT)"
 	@echo "  make prod-all             Run every API with gunicorn"
 	@echo "  make prod-core            Run core_api with gunicorn on port $(CORE_API_PORT)"
 	@echo "  make prod-auth            Run auth_api with gunicorn on port $(AUTH_API_PORT)"
 	@echo ""
-	@echo "Database"
-	@echo "  make migrate              Run core_api Alembic migrations"
-	@echo "  make migrate-core         Run core_api Alembic migrations"
-	@echo "  make migrate-auth         Run auth_api Alembic migrations"
-	@echo "  make migrate-all          Run all API migrations"
-	@echo "  make revision name=...    Create a core_api Alembic revision"
-	@echo "  make revision-auth name=... Create an auth_api Alembic revision"
-	@echo "  make seed-core            Seed core_api library data"
-	@echo "  make seed-auth            Seed auth_api users"
+	@echo "Database Jobs / Docker Compose"
+	@echo "  make migrate              Run all API migrations in one-off containers"
+	@echo "  make migrate-core         Run core_api migrations in a one-off container"
+	@echo "  make migrate-auth         Run auth_api migrations in a one-off container"
+	@echo "  make seed                 Run all available seeds in one-off containers"
+	@echo "  make seed-core            Migrate and seed core_api data in a one-off container"
+	@echo "  make seed-auth            Migrate and seed auth_api data in a one-off container"
 	@echo ""
-	@echo "Toolbox"
-	@echo "  make seed                 Seed all available demo data"
-	@echo "  make seed-all             Seed all available demo data"
+	@echo "Database / Local Poetry"
+	@echo "  make migrate-local        Run all API migrations locally with Poetry"
+	@echo "  make migrate-core-local   Run core_api migrations locally with Poetry"
+	@echo "  make migrate-auth-local   Run auth_api migrations locally with Poetry"
+	@echo "  make seed-local           Run all seeds locally with Poetry"
+	@echo "  make seed-core-local      Seed core_api data locally with Poetry"
+	@echo "  make seed-auth-local      Seed auth_api users locally with Poetry"
+	@echo "  make revision name=...    Create a core_api Alembic revision locally"
+	@echo "  make revision-auth name=... Create an auth_api Alembic revision"
 	@echo ""
 	@echo "Docs and Tests"
 	@echo "  make docs                 Serve PT-BR docs at http://127.0.0.1:$(DOCS_PT_PORT)"
@@ -302,9 +313,19 @@ prod-observability: ensure-observability
 # ------------------------------------
 # DATABASE
 # ------------------------------------
-migrate: migrate-core
+migrate: migrate-all
 
-migrate-core: ensure-core
+migrate-all: migrate-core migrate-auth
+
+migrate-core:
+	$(COMPOSE_JOB_RUN) $(CORE_MIGRATE_JOB)
+
+migrate-auth:
+	$(COMPOSE_JOB_RUN) $(AUTH_MIGRATE_JOB)
+
+migrate-local: migrate-core-local migrate-auth-local
+
+migrate-core-local: ensure-core
 	PYTHONPATH=$(CORE_PYTHONPATH) poetry run alembic -c $(CORE_ALEMBIC) upgrade head
 
 revision: revision-core
@@ -312,24 +333,30 @@ revision: revision-core
 revision-core:
 	PYTHONPATH=$(CORE_PYTHONPATH) poetry run alembic -c $(CORE_ALEMBIC) revision --autogenerate -m "$(name)"
 
-migrate-auth: ensure-auth
+migrate-auth-local: ensure-auth
 	PYTHONPATH=$(AUTH_PYTHONPATH) poetry run alembic -c $(AUTH_ALEMBIC) upgrade head
 
 revision-auth:
 	PYTHONPATH=$(AUTH_PYTHONPATH) poetry run alembic -c $(AUTH_ALEMBIC) revision --autogenerate -m "$(name)"
 
-migrate-all: migrate-core migrate-auth
-
 seed: seed-all
 
 seed-all: seed-core seed-auth
 
-seed-core: ensure-core
+seed-core:
+	$(COMPOSE_JOB_RUN) $(CORE_SEED_JOB)
+
+seed-auth:
+	$(COMPOSE_JOB_RUN) $(AUTH_SEED_JOB)
+
+seed-local: seed-core-local seed-auth-local
+
+seed-core-local: ensure-core
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(CORE_PYTHONPATH) \
 	poetry run python toolbox/seeds/core_api/library_seed.py
 
-seed-auth: ensure-auth
+seed-auth-local: ensure-auth
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(AUTH_PYTHONPATH) \
 	poetry run python toolbox/seeds/auth_api/user_seed.py

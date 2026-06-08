@@ -13,7 +13,10 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --no-root
 
 COPY apps/auth_api/src ./apps/auth_api/src
+COPY apps/auth_api/alembic.ini ./apps/auth_api/alembic.ini
+COPY apps/auth_api/alembic ./apps/auth_api/alembic
 COPY packages ./packages
+COPY toolbox ./toolbox
 
 EXPOSE 8000
 
