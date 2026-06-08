@@ -1,4 +1,6 @@
+from core_api.modules.library.domains.sections.section_command_handlers import ShelfSectionCommandHandler
 from core_api.modules.library.domains.sections.section_entity import ShelfSectionEntity
+from core_api.modules.library.domains.sections.section_query_handlers import ShelfSectionQueryHandler
 from core_api.modules.library.domains.sections.section_schema import (
     ShelfSectionCreate,
     ShelfSectionRead,
@@ -15,6 +17,6 @@ router = create_crud_router(
     query_tag="sections - query",
     command_tag="sections - command",
     resource_label="sections",
-    search_fields=("name", "code"),
-    filter_fields=("shelf_id", "code"),
+    command_handler=ShelfSectionCommandHandler,
+    query_handler=ShelfSectionQueryHandler,
 )

@@ -1,4 +1,6 @@
+from core_api.modules.library.domains.books.book_command_handlers import BookCommandHandler
 from core_api.modules.library.domains.books.book_entity import BookEntity
+from core_api.modules.library.domains.books.book_query_handlers import BookQueryHandler
 from core_api.modules.library.domains.books.book_schema import BookCreate, BookRead, BookUpdate
 from core_api.shared.crud.route_factory import create_crud_router
 
@@ -11,6 +13,6 @@ router = create_crud_router(
     query_tag="books - query",
     command_tag="books - command",
     resource_label="books",
-    search_fields=("title", "author", "isbn"),
-    filter_fields=("shelf_id", "section_id", "isbn"),
+    command_handler=BookCommandHandler,
+    query_handler=BookQueryHandler,
 )

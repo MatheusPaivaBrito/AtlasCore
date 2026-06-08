@@ -3,20 +3,12 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel
-from sqlalchemy import String, cast, or_, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from core_api.infrastructure.database.connection import get_session
-from core_api.shared.exceptions import (
-    CoreInvalidFilterValueError,
-    CoreResourceConflictError,
-    CoreResourceNotFoundError,
-    CoreUnsupportedFilterError,
-)
 from core_api.shared.auth import core_auth_guard
 from core_api.shared.auth.schemas import AuthorizedUser
-from shared_kernel.time import DateTimeService
+from core_api.shared.crud.handlers import CrudCommandHandler, CrudQueryHandler
 
 ModelT = TypeVar("ModelT")
 
@@ -35,10 +27,12 @@ def create_crud_router(
     command_tag: str | None = None,
     resource_label: str | None = None,
     permission_domain: str | None = None,
+    command_handler: type[CrudCommandHandler[Any]] | None = None,
+    query_handler: type[CrudQueryHandler[Any]] | None = None,
     search_fields: tuple[str, ...] = (),
     filter_fields: tuple[str, ...] = (),
 ) -> APIRouter:
-    """Build conventional CRUD, soft-delete and restore routes for simple Core modules."""
+    """Build CRUD routes by translating HTTP requests into CQRS commands and queries."""
 
     router = APIRouter(prefix=prefix)
     resource_name = getattr(model, "__tablename__", model.__name__)
@@ -49,89 +43,33 @@ def create_crud_router(
     authorization_domain = permission_domain or prefix.strip("/")
     require_write = core_auth_guard.require_permission(domain=authorization_domain, action="write")
     require_delete = core_auth_guard.require_permission(domain=authorization_domain, action="delete")
-    has_soft_delete = hasattr(model, "deleted_at")
 
-    def _load(session: Session, resource_id: UUID, *, include_deleted: bool = False) -> ModelT:
-        instance = session.get(model, resource_id)
-        if instance is None:
-            raise CoreResourceNotFoundError(entity=resource_name, resource_id=resource_id)
-        if has_soft_delete and not include_deleted and getattr(instance, "deleted_at") is not None:
-            raise CoreResourceNotFoundError(entity=resource_name, resource_id=resource_id)
-        return instance
+    command_handler_type = command_handler or type(
+        "GeneratedCrudCommandHandler",
+        (CrudCommandHandler,),
+        {"model": model},
+    )
+    query_handler_type = query_handler or type(
+        "GeneratedCrudQueryHandler",
+        (CrudQueryHandler,),
+        {
+            "model": model,
+            "search_fields": search_fields,
+            "filter_fields": filter_fields,
+        },
+    )
+    active_filter_fields = filter_fields or tuple(getattr(query_handler_type, "filter_fields", ()))
 
-    def _persist(session: Session, instance: ModelT) -> ModelT:
-        try:
-            session.add(instance)
-            session.flush()
-            session.refresh(instance)
-        except IntegrityError as exc:
-            session.rollback()
-            raise CoreResourceConflictError(entity=resource_name) from exc
-        return instance
-
-    def _column(field_name: str) -> Any:
-        column = getattr(model, field_name, None)
-        if column is None:
-            raise CoreUnsupportedFilterError(entity=resource_name, field=field_name)
-        return column
-
-    def _coerce_filter_value(field_name: str, raw_value: str) -> Any:
-        column = _column(field_name)
-        try:
-            python_type = column.property.columns[0].type.python_type
-        except (AttributeError, NotImplementedError):
-            return raw_value
-
-        if python_type is UUID:
-            try:
-                return UUID(raw_value)
-            except ValueError as exc:
-                raise CoreInvalidFilterValueError(
-                    entity=resource_name,
-                    field=field_name,
-                    expected_type="UUID",
-                    value=raw_value,
-                ) from exc
-        if python_type is int:
-            try:
-                return int(raw_value)
-            except ValueError as exc:
-                raise CoreInvalidFilterValueError(
-                    entity=resource_name,
-                    field=field_name,
-                    expected_type="integer",
-                    value=raw_value,
-                ) from exc
-        return raw_value
-
-    def _apply_soft_delete_scope(statement: Any, *, include_deleted: bool, only_deleted: bool) -> Any:
-        if not has_soft_delete:
-            return statement
-        deleted_column = _column("deleted_at")
-        if only_deleted:
-            return statement.where(deleted_column.is_not(None))
-        if include_deleted:
-            return statement
-        return statement.where(deleted_column.is_(None))
-
-    def _apply_search(statement: Any, q: str | None) -> Any:
-        if not q or not search_fields:
-            return statement
-        like_value = f"%{q.strip()}%"
-        if like_value == "%%":
-            return statement
-        conditions = [cast(_column(field), String).ilike(like_value) for field in search_fields]
-        return statement.where(or_(*conditions))
-
-    def _apply_exact_filters(statement: Any, request: Request) -> Any:
-        for field_name in filter_fields:
+    def _filters_from_request(request: Request) -> dict[str, str]:
+        filters: dict[str, str] = {}
+        for field_name in active_filter_fields:
             if field_name in _RESERVED_QUERY_PARAMS:
                 continue
             raw_value = request.query_params.get(field_name)
             if raw_value is None or raw_value == "":
                 continue
-            statement = statement.where(_column(field_name) == _coerce_filter_value(field_name, raw_value))
-        return statement
+            filters[field_name] = raw_value
+        return filters
 
     @router.post(
         "",
@@ -146,8 +84,9 @@ def create_crud_router(
         authorized_user: AuthorizedUser = require_write,
         session: Session = Depends(get_session),
     ) -> Any:
-        instance = model(**payload.model_dump())
-        return _persist(session, instance)
+        handler = command_handler_type(session)
+        command = handler.create_command_type(payload=payload)
+        return handler.create(command)
 
     @router.get(
         "",
@@ -165,18 +104,16 @@ def create_crud_router(
         offset: int = 0,
         session: Session = Depends(get_session),
     ) -> Any:
-        limit = max(1, min(limit, 100))
-        offset = max(0, offset)
-        statement = select(model)
-        statement = _apply_soft_delete_scope(
-            statement,
+        handler = query_handler_type(session)
+        query = handler.list_query_type(
+            q=q,
             include_deleted=include_deleted,
             only_deleted=only_deleted,
+            limit=limit,
+            offset=offset,
+            filters=_filters_from_request(request),
         )
-        statement = _apply_search(statement, q)
-        statement = _apply_exact_filters(statement, request)
-        statement = statement.offset(offset).limit(limit)
-        return session.scalars(statement).all()
+        return handler.list(query)
 
     @router.get(
         "/{resource_id}",
@@ -190,7 +127,9 @@ def create_crud_router(
         include_deleted: bool = False,
         session: Session = Depends(get_session),
     ) -> Any:
-        return _load(session, resource_id, include_deleted=include_deleted)
+        handler = query_handler_type(session)
+        query = handler.get_query_type(resource_id=resource_id, include_deleted=include_deleted)
+        return handler.get(query)
 
     @router.patch(
         "/{resource_id}",
@@ -205,10 +144,9 @@ def create_crud_router(
         authorized_user: AuthorizedUser = require_write,
         session: Session = Depends(get_session),
     ) -> Any:
-        instance = _load(session, resource_id)
-        for field, value in payload.model_dump(exclude_unset=True).items():
-            setattr(instance, field, value)
-        return _persist(session, instance)
+        handler = command_handler_type(session)
+        command = handler.update_command_type(resource_id=resource_id, payload=payload)
+        return handler.update(command)
 
     @router.delete(
         "/{resource_id}",
@@ -222,17 +160,9 @@ def create_crud_router(
         authorized_user: AuthorizedUser = require_delete,
         session: Session = Depends(get_session),
     ) -> None:
-        instance = _load(session, resource_id)
-        if has_soft_delete:
-            soft_delete = getattr(instance, "soft_delete", None)
-            if callable(soft_delete):
-                soft_delete()
-            else:
-                setattr(instance, "deleted_at", DateTimeService.utc_now())
-            _persist(session, instance)
-            return
-        session.delete(instance)
-        session.flush()
+        handler = command_handler_type(session)
+        command = handler.delete_command_type(resource_id=resource_id)
+        handler.delete(command)
 
     @router.post(
         "/{resource_id}/restore",
@@ -246,13 +176,8 @@ def create_crud_router(
         authorized_user: AuthorizedUser = require_write,
         session: Session = Depends(get_session),
     ) -> Any:
-        instance = _load(session, resource_id, include_deleted=True)
-        if has_soft_delete:
-            restore = getattr(instance, "restore", None)
-            if callable(restore):
-                restore()
-            else:
-                setattr(instance, "deleted_at", None)
-        return _persist(session, instance)
+        handler = command_handler_type(session)
+        command = handler.restore_command_type(resource_id=resource_id)
+        return handler.restore(command)
 
     return router

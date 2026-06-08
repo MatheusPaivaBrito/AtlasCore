@@ -1,4 +1,6 @@
+from core_api.modules.library.domains.libraries.library_command_handlers import LibraryCommandHandler
 from core_api.modules.library.domains.libraries.library_entity import LibraryEntity
+from core_api.modules.library.domains.libraries.library_query_handlers import LibraryQueryHandler
 from core_api.modules.library.domains.libraries.library_schema import (
     LibraryCreate,
     LibraryRead,
@@ -15,6 +17,6 @@ router = create_crud_router(
     query_tag="libraries - query",
     command_tag="libraries - command",
     resource_label="libraries",
-    search_fields=("name", "code"),
-    filter_fields=("code",),
+    command_handler=LibraryCommandHandler,
+    query_handler=LibraryQueryHandler,
 )
