@@ -42,6 +42,21 @@ make compose-observability
 make compose-dev
 ```
 
+## Job Containers
+
+Migration and seed commands can run as one-off Compose jobs:
+
+```bash
+make migrate
+make migrate-core
+make migrate-auth
+make seed
+make seed-core
+make seed-auth
+```
+
+Those jobs use the same Compose network as Postgres and Redis, so database URLs point to internal service names instead of `localhost`.
+
 ## Product API Services
 
 | Compose Service | App | Profile |

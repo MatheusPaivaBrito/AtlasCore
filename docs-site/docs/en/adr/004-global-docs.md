@@ -10,7 +10,7 @@ Use one global MkDocs site.
 
 ## Why
 
-The project is a monorepo. A single documentation site makes onboarding and interview review easier.
+The project is a monorepo. A single documentation site makes onboarding and architecture review easier.
 
 ## Consequences
 

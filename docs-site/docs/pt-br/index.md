@@ -1,6 +1,6 @@
 # Visao Geral
 
-AtlasCore e um monorepo backend pensado para entrevista de emprego e tambem para servir como base real de projetos FastAPI.
+AtlasCore e uma base backend reutilizavel para projetos FastAPI com separacao clara entre produto, plataforma e infraestrutura compartilhada.
 
 Ele possui APIs de produto, APIs de plataforma, um worker planejado, um shared kernel, testes, Docker Compose, Alembic e documentacao em MkDocs.
 
@@ -18,9 +18,10 @@ As partes mais concretas neste momento sao `core_api` e `auth_api`.
 - soft delete com `deleted_at` e rota de restore;
 - query por texto e por filtros principais;
 - modulo `public_assets` para imagens e documentos publicos;
-- fabrica de rotas CRUD para recursos simples.
+- fabrica de rotas CRUD para recursos simples;
 - contrato estruturado de erro registrado por todas as APIs;
-- settings separados entre banco/cache da Core e descoberta da plataforma.
+- settings separados entre banco/cache da Core e descoberta da plataforma;
+- rotas de comando protegidas por Auth e rotas de query publicas para catalogo.
 
 `auth_api` ja tem:
 
@@ -91,7 +92,7 @@ Ela mostra:
 - links para MkDocs PT-BR e EN nas portas `8080` e `8081`;
 - disponibilidade dos servidores de documentacao quando o MkDocs estiver rodando.
 
-O Swagger da Core API foi customizado para entrevista: tema escuro, filtro habilitado, operacoes fechadas por padrao e grupos separados por recurso, como `books - query`, `books - command`, `shelves - query` e `shelves - command`.
+O Swagger da Core API foi customizado para leitura tecnica: tema escuro, filtro habilitado, operacoes fechadas por padrao e grupos separados por recurso, como `books - query`, `books - command`, `shelves - query` e `shelves - command`.
 
 ---
 

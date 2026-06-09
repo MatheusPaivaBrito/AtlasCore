@@ -22,15 +22,17 @@ Auth stores:
 
 Values are serialized with `orjson`.
 
-## Adapter Location
+## Shared JSON Store
 
-Each API has a place for Redis adapters:
+Redis JSON serialization is shared through:
 
 ```text
-infrastructure/cache/
+packages/shared_kernel/src/shared_kernel/cache/json_store.py
 ```
 
-That folder should be created only when the service has real Redis code. Auth session logic currently lives under:
+`JsonStore` keeps Redis serialization based on `orjson`, so APIs do not need to copy JSON encode/decode behavior.
+
+Auth session logic currently lives under:
 
 ```text
 apps/auth_api/src/auth_api/modules/sessions/application/

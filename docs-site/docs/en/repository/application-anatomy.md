@@ -55,7 +55,6 @@ bootstrap/
   routes.py
   health.py
   home.py
-  templates/
 ```
 
 | File | Why It Exists |
@@ -66,9 +65,10 @@ bootstrap/
 | `routes.py` | Central route registry for that service. New module routers are wired here. |
 | `health.py` | Stable `/health` endpoint used by tests and containers. |
 | `home.py` | Serves the Core API landing page at `/`. |
-| `templates/` | Jinja templates used by bootstrap pages. |
 
 Startup hooks, dependency containers and lifecycle wiring should be added when there is real startup work. Until then, the bootstrap stays small.
+
+Shared service-home HTML lives in `shared_kernel.http.templates`. A service should only create a local `bootstrap/templates/` folder when it has service-specific templates.
 
 Every API has its own `bootstrap/exceptions.py`. Today those files call the same shared handler registration, but keeping the file per API gives each service an obvious place for future service-specific mappings.
 
@@ -96,6 +96,8 @@ modules/public_assets/infrastructure/providers/gcp_storage/
 ```
 
 This keeps the project vertical: module-specific infrastructure lives with the module.
+
+Shared SQLAlchemy connection helpers and ORM mixins live in `shared_kernel.persistence.sqlalchemy`; each API keeps only the local adapter that applies its own settings and declarative base.
 
 ## `modules/`
 

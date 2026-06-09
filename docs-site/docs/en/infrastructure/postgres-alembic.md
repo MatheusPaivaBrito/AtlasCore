@@ -38,21 +38,19 @@ This is better than root-level Alembic because it makes ownership explicit.
 ## Database Infrastructure Files
 
 ```text
-apps/core_api/src/core_api/infrastructure/database/
+apps/<api>/src/<api>/infrastructure/database/
   base.py
   connection.py
   loader.py
-  mixins.py
 ```
 
 | File | Purpose |
 | --- | --- |
-| `base.py` | SQLAlchemy declarative base and `BaseModel`. |
-| `connection.py` | Engine, session factory and FastAPI session dependency. |
+| `base.py` | Service-local declarative base and `BaseModel`. |
+| `connection.py` | Service-local adapter around shared engine/session helpers. |
 | `loader.py` | Imports ORM models so Alembic can discover metadata. |
-| `mixins.py` | Timestamp and soft-delete behavior reused by ORM entities. |
 
-`BaseModel` keeps the UUID primary key and inherits timestamp/soft-delete behavior from the mixins.
+`BaseModel` keeps the UUID primary key and inherits timestamp/soft-delete behavior from shared kernel mixins.
 
 The timestamp mixin uses `shared_kernel.time.DateTimeService.utc_now` instead of scattering direct clock calls through the ORM layer.
 
@@ -79,7 +77,9 @@ make migrate
 make revision name="describe change"
 ```
 
-`make migrate` runs `alembic upgrade head` using `apps/core_api/alembic.ini`.
+`make migrate` runs all available API migrations through one-off Compose jobs.
+
+`make migrate-core` runs Core migrations using `apps/core_api/alembic.ini`.
 
 `make migrate-auth` runs `alembic upgrade head` using `apps/auth_api/alembic.ini`.
 

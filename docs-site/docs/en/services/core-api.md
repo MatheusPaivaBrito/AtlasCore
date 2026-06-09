@@ -103,6 +103,13 @@ The repetitive `library` routes use `core_api.shared.crud.create_crud_router`.
 
 The factory exists because simple CRUD resources share the same shape: create, list, get, patch, soft-delete and restore.
 
+The generic factory now lives in `shared_kernel.http.crud`. Core keeps a local adapter in `core_api.shared.crud` to inject:
+
+- Core SQLAlchemy session dependency;
+- Core-specific errors;
+- Auth guards for command routes;
+- CQRS level 2 handlers used by library resources.
+
 The rule is:
 
 - use the factory for simple resources;
@@ -111,6 +118,20 @@ The rule is:
 - keep each resource entity next to its router in `domains/<resource>/<resource>_entity.py`.
 
 This avoids duplication now without blocking a richer design later.
+
+## Authorization
+
+Core separates reads and writes:
+
+- query routes (`GET`) stay public for catalog-style reads;
+- command routes (`POST`, `PATCH`, `DELETE`, `restore`) go through `auth_api`.
+
+The Core guard extracts the access token from:
+
+- the `access_token` cookie;
+- the `Authorization: Bearer <token>` header.
+
+It then calls Auth's internal introspection route and validates `domain:action` permissions such as `books:write` or `books:delete`.
 
 ## Important Detail: Public Assets
 

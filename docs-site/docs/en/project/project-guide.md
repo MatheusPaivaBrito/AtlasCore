@@ -1,8 +1,8 @@
-# Interview Guide
+# Project Guide
 
 ## Short Pitch
 
-AtlasCore is a FastAPI backend monorepo that demonstrates product APIs, platform APIs, DDD modules, Clean Architecture, database ownership, eventing strategy, observability strategy, notification strategy, testing and documentation.
+AtlasCore is a reusable FastAPI backend foundation with product APIs, platform APIs, DDD modules, Clean Architecture, database ownership, eventing strategy, observability strategy, notification strategy, testing and documentation.
 
 ## The Main Architecture Point
 
@@ -27,11 +27,11 @@ observability_api
 core_api.modules.public_assets
 ```
 
-That is the most important interview explanation.
+That is the main architectural decision behind the service map.
 
-## Why This Should Impress
+## Why This Design Matters
 
-- It is bigger than a CRUD demo.
+- It is bigger than a shallow CRUD scaffold.
 - It still has a clear reason for each service.
 - The folder structure is consistent across APIs.
 - The `library` module gives a concrete relational example.

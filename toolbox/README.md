@@ -1,6 +1,6 @@
 # AtlasCore Toolbox
 
-`toolbox/` stores operational and development scripts that are useful during local work, demos and interviews.
+`toolbox/` stores operational and development scripts that are useful during local work, demos and manual maintenance.
 
 This folder is intentionally separate from `tests/`.
 

@@ -52,8 +52,11 @@ Os dois servicos de produto ja possuem fatias funcionais reais.
 - rotas CRUD para libraries, shelves, sections, books, readers e rentals;
 - soft delete e rotas de restore;
 - queries com busca textual e filtros exatos;
+- separacao CQRS nivel 2 para comandos, queries e handlers simples;
+- rotas de comando protegidas por introspeccao no `auth_api`;
+- rotas de query publicas para leitura de catalogo;
 - modulo `public_assets` para imagens/documentos publicos;
-- mixins SQLAlchemy de timestamp e soft delete;
+- mixins SQLAlchemy de timestamp e soft delete vindos do `shared_kernel`;
 - settings separados entre configuracao de banco/cache da Core e descoberta da plataforma;
 - seeds no toolbox para popular dados mockados da livraria.
 
@@ -92,10 +95,14 @@ As APIs de plataforma existem como fronteiras de servico. Elas ainda nao fingem 
 
 `packages/shared_kernel` contem hoje:
 
+- `shared_kernel.cache.JsonStore`;
 - `shared_kernel.time.DateTimeService`;
 - `shared_kernel.errors.ApplicationError`;
 - `shared_kernel.errors.ErrorTarget`;
-- `shared_kernel.errors.register_exception_handlers`.
+- `shared_kernel.errors.register_exception_handlers`;
+- `shared_kernel.http` para CORS e pagina inicial compartilhada;
+- `shared_kernel.http.crud` para comandos, queries, handlers, guards e fabrica de CRUD;
+- `shared_kernel.persistence.sqlalchemy` para base de conexao e mixins ORM.
 
 O shared kernel deve continuar pequeno. Ele guarda primitivas seguras de compartilhar, nao regras de produto.
 
@@ -130,15 +137,38 @@ apps/core_api/src/core_api/modules/library/domain/exceptions.py
 
 A configuracao foi separada de proposito.
 
-`core_api.infrastructure.settings.CoreSettings` possui valores que a propria Core usa:
+O `.env` foi reorganizado em um bloco global e blocos por API.
+
+O bloco global guarda valores herdaveis:
 
 - identidade da aplicacao;
 - ambiente/debug;
-- Postgres;
-- Redis;
-- `DATABASE_URL`;
-- `REDIS_URL`;
-- politica de CORS da Core API.
+- container Postgres compartilhado;
+- container Redis compartilhado;
+- origens de browser;
+- paths comuns de health/docs/ReDoc;
+- defaults compartilhados de CORS;
+- portas e URLs publicas do MkDocs.
+
+Cada API possui seu proprio bloco com runtime, banco, Redis, CORS e providers especificos. Exemplo:
+
+```text
+CORE_SERVICE_NAME
+CORE_API_PORT
+CORE_POSTGRES_DB
+CORE_REDIS_KEY_PREFIX
+CORE_API_CORS_ALLOWED_ORIGINS
+```
+
+`core_api.infrastructure.settings.CoreSettings` possui valores que a propria Core usa:
+
+- identidade do servico via `CORE_SERVICE_NAME`;
+- Postgres da Core;
+- Redis DB/namespace da Core;
+- `CORE_DATABASE_URL` com fallback para `DATABASE_URL`;
+- `CORE_REDIS_URL` com fallback para `REDIS_URL`;
+- politica de CORS da Core API;
+- URL interna e timeout para introspeccao no Auth.
 
 `core_api.infrastructure.platform_discovery.PlatformDiscoverySettings` possui valores usados pela pagina inicial da Core para descrever a plataforma local:
 
@@ -153,7 +183,7 @@ Cada API possui um pequeno `infrastructure/settings.py` para sua propria politic
 
 URLs publicas sao para browser, documentacao e pessoas. URLs internas sao para chamada entre servicos. Em desenvolvimento bare metal as duas apontam para `localhost`; no Docker Compose as internas apontam para nomes de servico, como `http://auth-api:8000`.
 
-As variaveis Kafka continuam no `.env` e Docker Compose porque Kafka ainda faz parte do plano de plataforma. Quando `eventing_api` comecar a usar adapters Kafka de verdade, esses settings devem nascer em `eventing_api/infrastructure/settings.py`.
+As variaveis Kafka ficam no bloco da `eventing_api`, porque Eventing sera a fronteira de governanca de topicos, contratos e outbox. As variaveis Loki/Grafana/Sentry ficam no bloco da `observability_api`. Redis de notificacao fica no bloco da `notification_api`.
 
 `auth_api.infrastructure.settings.AuthSettings` possui configuracao propria para:
 
@@ -194,6 +224,8 @@ A suite cobre hoje:
 - mixins de banco;
 - helper de datetime compartilhado;
 - contrato de erro compartilhado.
+- settings de nome de servico por API;
+- fabrica CRUD compartilhada no `shared_kernel`.
 
 ## Toolbox
 
@@ -223,9 +255,8 @@ Esse comando executa `toolbox/seeds/auth_api/user_seed.py` e cria usuarios demo 
 
 Os proximos passos de implementacao deveriam ser:
 
-- proteger `core_api` usando Auth;
-- decidir a estrategia final de autorizacao entre backends;
+- expandir a estrategia de autorizacao entre backends alem do primeiro guard da Core;
 - adicionar cache Redis real no `core_api` quando houver comportamento que justifique;
 - ligar Kafka apenas quando houver comportamento real de evento/outbox;
-- adicionar settings especificos em cada API quando cada uma comecar a usar providers reais;
+- preencher settings especificos em cada API quando cada provider virar codigo real;
 - manter a documentacao atualizada sempre que um placeholder virar codigo.

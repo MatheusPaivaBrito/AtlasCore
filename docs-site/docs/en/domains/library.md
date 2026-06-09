@@ -2,7 +2,7 @@
 
 `library` is the first concrete domain model inside `core_api`.
 
-It exists to make the architecture real. Empty folders do not prove much in an interview; a small domain with relationships, query flows, soft delete and restore does.
+It exists to make the architecture real. Empty folders do not prove much; a small domain with relationships, query flows, soft delete and restore makes the backend foundation tangible.
 
 ## Business Story
 
@@ -158,7 +158,7 @@ Each CRUD resource exposes `POST`, `GET`, `GET /{resource_id}`, `PATCH /{resourc
 
 Right now these resources have a conventional CRUD shape.
 
-Repeating that structure six times would make the project larger without proving more domain thinking. `core_api.shared.crud.create_crud_router` removes the repetition.
+Repeating that structure six times would make the project larger without adding more domain language. `core_api.shared.crud.create_crud_router` removes the repetition.
 
 The factory does not replace Clean Architecture. It is a convenience for simple endpoints.
 

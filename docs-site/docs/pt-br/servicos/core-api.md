@@ -103,6 +103,13 @@ As rotas repetitivas do dominio `library` usam `core_api.shared.crud.create_crud
 
 Ela existe porque CRUD basico tende a repetir a mesma estrutura: criar, listar, buscar, atualizar, deletar e restaurar.
 
+Hoje a fabrica generica mora em `shared_kernel.http.crud`. A Core possui um adapter local em `core_api.shared.crud` para injetar:
+
+- dependencia de sessao SQLAlchemy da Core;
+- erros especificos da Core;
+- guards de Auth para rotas de comando;
+- handlers CQRS nivel 2 usados pelos recursos da livraria.
+
 A regra de uso e simples:
 
 - usar a fabrica para recursos simples;
@@ -111,6 +118,20 @@ A regra de uso e simples:
 - manter entidade SQLAlchemy junto do recurso em `domains/<resource>/<resource>_entity.py`.
 
 Isso evita duplicacao agora sem impedir evolucao depois.
+
+## Autorizacao
+
+A Core separa leitura e escrita:
+
+- rotas de query (`GET`) ficam publicas para catalogo;
+- rotas de command (`POST`, `PATCH`, `DELETE`, `restore`) passam pelo `auth_api`.
+
+O guard da Core extrai o access token de:
+
+- cookie `access_token`;
+- header `Authorization: Bearer <token>`.
+
+Depois ele chama a rota interna de introspeccao do Auth e valida permissoes `domain:action`, como `books:write` ou `books:delete`.
 
 ## Public Assets
 

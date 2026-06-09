@@ -1,6 +1,6 @@
 # AtlasCore
 
-AtlasCore is an interview-grade FastAPI backend monorepo built around DDD, Clean Architecture, Postgres, Redis, Kafka-ready platform services and MkDocs documentation.
+AtlasCore is a reusable FastAPI backend foundation built around DDD, Clean Architecture, Postgres, Redis, Kafka-ready platform services and MkDocs documentation.
 
 This README is intentionally short. The complete architecture explanation lives in MkDocs.
 
@@ -16,7 +16,7 @@ Main entrypoints:
 
 - Portuguese: `docs-site/docs/pt-br/index.md`
 - English: `docs-site/docs/en/index.md`
-- Interview guide: `docs-site/docs/en/interview/interview-guide.md`
+- Project guide: `docs-site/docs/en/project/project-guide.md`
 
 ## Quick Start
 

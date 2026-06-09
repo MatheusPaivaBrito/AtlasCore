@@ -10,7 +10,7 @@ Use one repository with multiple apps under `apps/`, shared primitives under `pa
 
 ## Why
 
-The project is early and interview-focused. A monorepo makes the whole architecture easier to inspect, run and refactor.
+The project is early and evolving as a reusable backend foundation. A monorepo makes the whole architecture easier to inspect, run and refactor while boundaries are still being shaped.
 
 ## Consequences
 

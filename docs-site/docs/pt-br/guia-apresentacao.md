@@ -1,10 +1,10 @@
-# Guia de Entrevista
+# Guia de Apresentação
 
 ## Pitch
 
-AtlasCore é um monorepo FastAPI com APIs de produto e APIs de plataforma. Ele usa DDD, Clean Architecture, Postgres, Redis, Kafka, MkDocs e testes desde o começo.
+AtlasCore é uma base backend FastAPI em monorepo com APIs de produto, APIs de plataforma, shared kernel, Postgres, Redis, Kafka planejado, MkDocs e testes desde o começo.
 
-## Principal defesa arquitetural
+## Principal decisão arquitetural
 
 O projeto não cria um backend por ferramenta. Ele agrupa por capacidade:
 

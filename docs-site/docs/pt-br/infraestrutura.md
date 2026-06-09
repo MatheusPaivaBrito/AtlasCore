@@ -50,23 +50,30 @@ A raiz possui `.env` e `.env.example`.
 
 O `.env` serve para desenvolvimento local e tambem para interpolacao do Docker Compose.
 
-Variaveis principais:
+A organizacao segue o mesmo desenho do projeto:
 
-| Variavel | Padrao |
+```text
+ATLASCORE / GLOBAL
+ATLASCORE / CORE API
+ATLASCORE / AUTH API
+ATLASCORE / EVENTING API
+ATLASCORE / NOTIFICATION API
+ATLASCORE / OBSERVABILITY API
+```
+
+O bloco global guarda defaults herdaveis, como identidade da app, container Postgres, container Redis, origins de frontend, paths comuns e portas da documentacao.
+
+Cada bloco de API guarda o que pertence a ela:
+
+| Bloco | Exemplos |
 | --- | --- |
-| `APP_NAME` | `AtlasCore` |
-| `ENVIRONMENT` | `development` |
-| `APP_DEBUG` | `1` |
-| `POSTGRES_HOST` | `localhost` |
-| `POSTGRES_PORT` | `5432` |
-| `POSTGRES_DB` | `atlas_core` |
-| `POSTGRES_USER` | `atlas` |
-| `POSTGRES_PASSWORD` | `atlas` |
-| `REDIS_HOST` | `localhost` |
-| `REDIS_PORT` | `6379` |
-| `REDIS_DB` | `1` |
-| `DATABASE_URL` | override opcional; se vazio, o `settings` monta a URL |
-| `REDIS_URL` | override opcional; se vazio, o `settings` monta a URL |
+| `CORE API` | `CORE_SERVICE_NAME`, `CORE_POSTGRES_DB`, `CORE_REDIS_KEY_PREFIX`, `CORE_API_CORS_ALLOWED_ORIGINS`. |
+| `AUTH API` | `AUTH_SERVICE_NAME`, `AUTH_POSTGRES_DB`, `AUTH_REDIS_KEY_PREFIX`, JWT, cookies, bcrypt e sessoes. |
+| `EVENTING API` | `EVENTING_SERVICE_NAME`, `EVENTING_POSTGRES_DB`, Kafka e CORS. |
+| `NOTIFICATION API` | `NOTIFICATION_SERVICE_NAME`, Redis de notificacao e CORS. |
+| `OBSERVABILITY API` | `OBSERVABILITY_SERVICE_NAME`, Loki, Grafana, Sentry e CORS. |
+
+`DATABASE_URL` e `REDIS_URL` continuam existindo como overrides globais opcionais. O caminho preferido e usar as variaveis especificas, como `CORE_DATABASE_URL`, `AUTH_DATABASE_URL`, `CORE_REDIS_URL` e `AUTH_REDIS_URL`.
 
 O `core_api` centraliza variaveis de banco e cache em `core_api.infrastructure.settings.settings`.
 
@@ -82,9 +89,9 @@ O `auth_api` possui settings proprios para:
 - limite de dispositivos;
 - bcrypt rounds.
 
-Dentro dos containers, o Compose sobrescreve `DATABASE_URL` para apontar para o host `postgres`, nao para `localhost`.
+Dentro dos containers, o Compose sobrescreve as URLs especificas de cada API para apontar para os hosts internos, como `postgres`, `redis` e `auth-api`, nao para `localhost`.
 
-## Shared Kernel e mixins
+## Shared Kernel, persistencia e cache
 
 Utilitarios reaproveitaveis vivem em `packages/shared_kernel`.
 
@@ -92,7 +99,11 @@ O helper `shared_kernel.time.DateTimeService` centraliza criacao de datas em UTC
 
 O pacote `shared_kernel.errors` centraliza o contrato generico de erro usado por todas as APIs.
 
-No `core_api`, os modelos SQLAlchemy usam mixins em `core_api.infrastructure.database.mixins` para timestamp e soft delete. Isso evita espalhar `datetime.now()` ou atribuicoes manuais de `deleted_at` pelas rotas.
+O pacote `shared_kernel.persistence.sqlalchemy` centraliza engine, session factory, dependencia FastAPI e mixins ORM. Core e Auth continuam donas do proprio `settings.py`, `Base` e Alembic, mas nao precisam copiar a mecanica de conexao.
+
+O pacote `shared_kernel.cache` possui `JsonStore` para serializar valores Redis com `orjson`.
+
+O pacote `shared_kernel.http.crud` guarda a fabrica CRUD generica. Cada API injeta sua propria sessao, guards e erros.
 
 ## Postgres + Alembic
 

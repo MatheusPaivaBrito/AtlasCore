@@ -1,5 +1,5 @@
 site_name: AtlasCore
-site_description: Interview-grade backend platform with FastAPI, DDD, Clean Architecture, Postgres, Redis, Kafka and MkDocs.
+site_description: Reusable backend platform with FastAPI, DDD, Clean Architecture, Postgres, Redis, Kafka and MkDocs.
 site_author: Matheus Paiva
 
 docs_dir: docs/en
@@ -82,10 +82,10 @@ nav:
   - Quality:
       - Testing Strategy: quality/testing-strategy.md
       - Development Workflow: quality/development-workflow.md
-  - Interview Material:
-      - Interview Guide: interview/interview-guide.md
-      - Talking Points: interview/talking-points.md
-      - Glossary: interview/glossary.md
+  - Project Narrative:
+      - Project Guide: project/project-guide.md
+      - Talking Points: project/talking-points.md
+      - Glossary: project/glossary.md
   - ADRs:
       - Decision Log: adr/index.md
       - ADR 001 - Monorepo: adr/001-monorepo.md

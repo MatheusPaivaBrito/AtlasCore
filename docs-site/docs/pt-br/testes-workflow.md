@@ -27,6 +27,8 @@ Os testes atuais cobrem:
 - registro ORM para Alembic;
 - estrutura vertical da livraria;
 - settings e montagem de URLs;
+- settings de nome de servico por API;
+- fabrica CRUD compartilhada;
 - mixins de banco;
 - `shared_kernel.time.DateTimeService`.
 
@@ -36,6 +38,21 @@ Os testes atuais cobrem:
 make docs      # Portugues na 8080
 make docs-en   # Ingles na 8081
 make docs-all  # build das duas versoes
+```
+
+## Ajuda do Makefile
+
+O `make` mostra uma pagina curta de navegacao. As paginas especificas evitam um help gigante:
+
+```bash
+make help-core
+make help-auth
+make help-eventing
+make help-notifications
+make help-observability
+make help-db
+make help-docs
+make help-all
 ```
 
 ## URLs publicas e internas
@@ -171,7 +188,12 @@ make compose-platform
 
 ```bash
 make migrate
+make migrate-auth
 make revision name="describe change"
+make revision-auth name="describe change"
 ```
 
-As migrations pertencem ao `core_api`, entao os comandos usam `apps/core_api/alembic.ini`.
+Cada API dona de banco possui Alembic proprio:
+
+- Core usa `apps/core_api/alembic.ini`;
+- Auth usa `apps/auth_api/alembic.ini`.

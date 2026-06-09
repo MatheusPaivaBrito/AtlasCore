@@ -2,7 +2,7 @@
 
 O dominio `library` fica dentro do `core_api` e serve como primeiro exemplo real de modelagem.
 
-A ideia nao e construir uma livraria complexa demais agora. A ideia e ter um dominio pequeno o suficiente para entrevista, mas rico o bastante para provar modelagem, relacoes, migrations, queries, soft delete e CRUD real.
+A ideia nao e construir uma livraria complexa demais agora. A ideia e ter um dominio pequeno o suficiente para evoluir rapido, mas rico o bastante para sustentar modelagem, relacoes, migrations, queries, soft delete e CRUD real.
 
 ## Historia de negocio
 
@@ -151,7 +151,7 @@ Cada CRUD exposto pela fabrica possui `POST`, `GET`, `GET /{resource_id}`, `PATC
 
 Neste momento todos esses recursos possuem um CRUD basico muito parecido.
 
-Repetir seis vezes a mesma estrutura deixaria o projeto maior sem mostrar mais dominio. Por isso existe `core_api.shared.crud.create_crud_router`.
+Repetir seis vezes a mesma estrutura deixaria o projeto maior sem adicionar linguagem de dominio. Por isso existe `core_api.shared.crud.create_crud_router`.
 
 A fabrica nao substitui Clean Architecture. Ela e uma conveniencia para endpoints simples.
 

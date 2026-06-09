@@ -33,10 +33,33 @@ The shared kernel should remain boring. Boring is good here because boring share
 ```text
 packages/shared_kernel/
   src/shared_kernel/
+    cache/
+      __init__.py
+      json_store.py
     errors/
       __init__.py
       application.py
       handlers.py
+    http/
+      __init__.py
+      cors.py
+      home.py
+      templates/
+        service_home.html
+      crud/
+        __init__.py
+        commands.py
+        errors.py
+        guards.py
+        handlers.py
+        queries.py
+        route_factory.py
+    persistence/
+      __init__.py
+      sqlalchemy/
+        __init__.py
+        connection.py
+        mixins.py
     time/
       __init__.py
       datetime_service.py
@@ -44,10 +67,20 @@ packages/shared_kernel/
 
 The concrete utilities today are:
 
+- `shared_kernel.cache.JsonStore`;
 - `shared_kernel.time.DateTimeService`;
 - `shared_kernel.errors.ApplicationError`;
 - `shared_kernel.errors.ErrorTarget`;
 - `shared_kernel.errors.register_exception_handlers`.
+- `shared_kernel.http.CorsConfig`;
+- `shared_kernel.http.apply_cors`;
+- `shared_kernel.http.render_service_home`;
+- `shared_kernel.http.crud.create_crud_router`;
+- `shared_kernel.persistence.sqlalchemy.create_sync_engine`;
+- `shared_kernel.persistence.sqlalchemy.create_session_factory`;
+- `shared_kernel.persistence.sqlalchemy.create_session_dependency`;
+- `shared_kernel.persistence.sqlalchemy.TimestampMixin`;
+- `shared_kernel.persistence.sqlalchemy.SoftDeleteMixin`.
 
 ## Time Helper
 
@@ -96,6 +129,48 @@ The shared kernel owns the generic error contract, not product-specific errors.
 - unexpected errors.
 
 Each API calls it from its own `bootstrap/exceptions.py`, passing its service name. That keeps the response contract global while still allowing each API to add service-specific behavior later.
+
+## Shared HTTP
+
+`shared_kernel.http` contains generic HTTP infrastructure:
+
+- `cors.py` wires FastAPI CORS middleware;
+- `home.py` renders a standard service landing page;
+- `templates/service_home.html` prevents copying the same HTML into Core, Auth and future APIs.
+
+Each API still owns its own copy, links and CORS policy. The shared kernel only owns the reusable mechanism.
+
+## Shared CRUD
+
+`shared_kernel.http.crud` contains the generic CRUD route factory:
+
+- `commands.py` defines simple create, update, delete and restore commands;
+- `queries.py` defines simple query params and filters;
+- `handlers.py` executes generic SQLAlchemy operations;
+- `guards.py` allows security dependencies per route;
+- `route_factory.py` mounts the six conventional routes.
+
+This lets `core_api` and `auth_api` reuse the same mechanics for simple CRUD resources while each API still chooses:
+
+- session dependency;
+- error factory;
+- read/write guards;
+- custom handlers;
+- schemas and ORM entities.
+
+## Persistence and Cache
+
+`shared_kernel.persistence.sqlalchemy` centralizes repeated SQLAlchemy pieces that do not belong to a business domain:
+
+- engine creation;
+- sessionmaker;
+- session dependency;
+- timestamp mixins;
+- soft-delete mixin.
+
+APIs still own their own `settings.py`, declarative `Base` and Alembic history.
+
+`shared_kernel.cache.JsonStore` wraps JSON reads/writes in Redis using `orjson`. Auth uses this pattern for sessions, and future APIs can reuse the same primitive without copying serialization code.
 
 ## Placeholder Policy
 

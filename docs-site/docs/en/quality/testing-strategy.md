@@ -22,15 +22,20 @@ Per-service tests keep boundaries visible. Integration tests verify contracts sh
 
 - Health endpoint per API.
 - Shared health contract across all APIs.
+- Shared CORS contract across APIs.
+- Auth API user CRUD, login and protected routes.
+- Auth API docs UI and home page.
 - `core_api` metadata registration for the `library` and `public_assets` SQLAlchemy models.
 - `core_api` custom docs and landing page.
+- `core_api` Auth guard behavior.
 - `core_api` settings URL derivation and overrides.
 - `core_api` platform discovery URL/port derivation.
 - `core_api` shared error contract responses.
-- `core_api` database mixins.
 - `core_api` library vertical structure.
+- Service-specific service-name settings.
 - `shared_kernel.time.DateTimeService`.
 - `shared_kernel.errors` structured error primitives.
+- `shared_kernel.http.crud` route factory contracts.
 - Shared 404 error contract across all APIs.
 
 ## Technical Note

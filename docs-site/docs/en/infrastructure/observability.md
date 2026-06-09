@@ -17,10 +17,10 @@ These tools are grouped under `observability_api` because the capability is obse
 ## Future Adapter Locations
 
 ```text
-apps/observability_api/src/observability_api/infrastructure/providers/
+apps/observability_api/src/observability_api/infrastructure/
   sentry/
   grafana/
   loki/
 ```
 
-Application services can also have local observability adapters for logging/correlation/error reporting.
+Those folders should be created only when the adapters become real code. Application services can also have local observability adapters for logging/correlation/error reporting.

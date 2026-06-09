@@ -27,7 +27,6 @@ apps/<api>/
 | `bootstrap/health.py` | Endpoint `/health`. |
 | `bootstrap/docs.py` | Swagger/ReDoc customizados quando a API precisar. |
 | `bootstrap/home.py` | Landing page HTML da API quando fizer sentido. |
-| `bootstrap/templates/` | Templates Jinja usados por paginas de bootstrap. |
 | `infrastructure/` | Adapters reais da API, como banco, providers ou cache quando existirem. |
 | `modules/` | Dominios/capacidades verticalizadas. |
 | `shared/` | Codigo compartilhado apenas dentro da API. |
@@ -60,8 +59,9 @@ O database possui:
 infrastructure/database/base.py
 infrastructure/database/connection.py
 infrastructure/database/loader.py
-infrastructure/database/mixins.py
 ```
+
+Os mixins e helpers de conexao SQLAlchemy ficam no `shared_kernel.persistence.sqlalchemy`. A Core mantem apenas o adapter local que aplica seus settings.
 
 O provider do Google Storage fica dentro do modulo `public_assets`, porque pertence a essa capacidade:
 
@@ -70,5 +70,7 @@ modules/public_assets/infrastructure/providers/gcp_storage/
 ```
 
 No `core_api`, a pasta `shared/crud/` existe porque a livraria possui varios recursos com CRUD basico igual.
+
+Essa pasta e um adapter da Core sobre `shared_kernel.http.crud`. O mecanismo repetitivo fica compartilhado; a Core injeta sessao, erros e guards proprios.
 
 Isso nao significa que toda rota deve ser generica. Quando uma regra de negocio aparecer, a rota deve chamar explicitamente um caso de uso dentro de `application/`.

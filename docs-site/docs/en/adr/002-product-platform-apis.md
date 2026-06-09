@@ -23,7 +23,7 @@ The former `bucket_api` idea was removed. Public images/documents are now a `pub
 
 ## Why
 
-This gives the project enough scope to impress while keeping boundaries explainable.
+This gives the project enough scope to support real backend concerns while keeping boundaries explainable.
 
 A Google Cloud Storage bucket is a provider detail, not a service boundary.
 
@@ -32,7 +32,7 @@ A Google Cloud Storage bucket is a provider detail, not a service boundary.
 Positive:
 
 - Clearer than one backend per tool.
-- Easier to explain in interviews.
+- Easier to explain, operate and evolve.
 - Platform capabilities can grow independently.
 - Public asset handling remains close to business metadata.
 

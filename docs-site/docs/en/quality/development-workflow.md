@@ -15,15 +15,28 @@ The repository has two environment files:
 | `.env` | Local development defaults. |
 | `.env.example` | Copyable/reference version for new machines or CI. |
 
-The Core API reads database/cache values through `core_api.infrastructure.settings.settings`.
+The environment file is organized as one global block plus one block per API:
 
-Connection values are intentionally split into small variables such as `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB`, `REDIS_HOST` and `REDIS_DB`. `DATABASE_URL` and `REDIS_URL` remain available as optional overrides for containers and deploy environments.
+```text
+ATLASCORE / GLOBAL
+ATLASCORE / CORE API
+ATLASCORE / AUTH API
+ATLASCORE / EVENTING API
+ATLASCORE / NOTIFICATION API
+ATLASCORE / OBSERVABILITY API
+```
+
+The global block owns reusable defaults such as app identity, shared Postgres, shared Redis, frontend origins, common service paths and documentation ports.
+
+Each API block owns service-specific runtime, database, Redis, CORS and provider settings. `DATABASE_URL` and `REDIS_URL` remain available as optional global overrides, but the preferred path is service-specific values such as `CORE_DATABASE_URL`, `AUTH_DATABASE_URL`, `CORE_REDIS_URL` and `AUTH_REDIS_URL`.
+
+The Core API reads database/cache values through `core_api.infrastructure.settings.settings`.
 
 The Core API entry page reads local service ports, public URLs and documentation links through `core_api.infrastructure.platform_discovery.platform_discovery_settings`.
 
-Shared utilities live in `packages/shared_kernel`. Current concrete utilities include `shared_kernel.time.DateTimeService` and the shared error contract under `shared_kernel.errors`.
+Shared utilities live in `packages/shared_kernel`. Current concrete utilities include time helpers, error contracts, CORS wiring, shared home-page rendering, SQLAlchemy persistence helpers, Redis JSON storage and CRUD route factories.
 
-Core SQLAlchemy entities reuse timestamp and soft-delete behavior through `core_api.infrastructure.database.mixins`.
+Core and Auth SQLAlchemy entities reuse timestamp and soft-delete behavior from `shared_kernel.persistence.sqlalchemy`.
 
 ## Public and Internal URLs
 
@@ -82,6 +95,21 @@ pytest
 make docs      # Portuguese on 8080
 make docs-en   # English on 8081
 make docs-all  # build both
+```
+
+## Makefile Help Pages
+
+`make` prints a short navigation index. Specific pages keep the help readable:
+
+```bash
+make help-core
+make help-auth
+make help-eventing
+make help-notifications
+make help-observability
+make help-db
+make help-docs
+make help-all
 ```
 
 ## Run Default Infrastructure
@@ -178,7 +206,12 @@ make compose-platform
 
 ```bash
 make migrate
+make migrate-auth
 make revision name="describe change"
+make revision-auth name="describe change"
 ```
 
-Migrations belong to `core_api`, so both commands use `apps/core_api/alembic.ini`.
+Each database-owning API has its own Alembic history:
+
+- Core uses `apps/core_api/alembic.ini`;
+- Auth uses `apps/auth_api/alembic.ini`.

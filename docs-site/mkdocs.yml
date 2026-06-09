@@ -1,5 +1,5 @@
 site_name: AtlasCore
-site_description: Plataforma backend para entrevista com FastAPI, DDD, Clean Architecture, Postgres, Redis, Kafka e MkDocs.
+site_description: Plataforma backend reutilizavel com FastAPI, DDD, Clean Architecture, Postgres, Redis, Kafka e MkDocs.
 site_author: Matheus Paiva
 
 docs_dir: docs/pt-br
@@ -70,4 +70,4 @@ nav:
   - Qualidade:
       - Estratégia de Testes: qualidade/estrategia-testes.md
       - Workflow de Desenvolvimento: testes-workflow.md
-  - Guia de Entrevista: guia-entrevista.md
+  - Guia de Apresentação: guia-apresentacao.md

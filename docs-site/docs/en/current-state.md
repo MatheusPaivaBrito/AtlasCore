@@ -52,8 +52,11 @@ Both product services now have real functional slices.
 - CRUD routes for libraries, shelves, sections, books, readers and rentals;
 - soft delete and restore routes;
 - query routes with text search and exact filters;
+- CQRS level 2 separation for simple commands, queries and handlers;
+- command routes protected through Auth API introspection;
+- public query routes for catalog reads;
 - `public_assets` as a Core module for public images/documents;
-- SQLAlchemy timestamp and soft-delete mixins;
+- SQLAlchemy timestamp and soft-delete mixins from the shared kernel;
 - runtime settings separated between Core database/cache settings and platform discovery settings;
 - toolbox seeds for Core library data.
 
@@ -92,10 +95,14 @@ The platform APIs exist as service boundaries now. They are not pretending to be
 
 `packages/shared_kernel` currently contains:
 
+- `shared_kernel.cache.JsonStore`;
 - `shared_kernel.time.DateTimeService`;
 - `shared_kernel.errors.ApplicationError`;
 - `shared_kernel.errors.ErrorTarget`;
-- `shared_kernel.errors.register_exception_handlers`.
+- `shared_kernel.errors.register_exception_handlers`;
+- `shared_kernel.http` for CORS and shared service home pages;
+- `shared_kernel.http.crud` for commands, queries, handlers, guards and CRUD route factories;
+- `shared_kernel.persistence.sqlalchemy` for connection helpers and ORM mixins.
 
 The shared kernel is intentionally small. It owns primitives that are safe across services, not product rules.
 
@@ -130,15 +137,38 @@ apps/core_api/src/core_api/modules/library/domain/exceptions.py
 
 Configuration is intentionally split.
 
-`core_api.infrastructure.settings.CoreSettings` owns values required by Core itself:
+The `.env` file is now organized into one global block and one block per API.
+
+The global block keeps reusable defaults:
 
 - app identity;
 - environment/debug;
-- Postgres settings;
-- Redis settings;
-- `DATABASE_URL`;
-- `REDIS_URL`;
-- Core API CORS policy.
+- shared Postgres container values;
+- shared Redis container values;
+- browser origins;
+- common health/docs/ReDoc paths;
+- shared CORS defaults;
+- MkDocs ports and public URLs.
+
+Each API has its own block with runtime, database, Redis, CORS and provider-specific values. Example:
+
+```text
+CORE_SERVICE_NAME
+CORE_API_PORT
+CORE_POSTGRES_DB
+CORE_REDIS_KEY_PREFIX
+CORE_API_CORS_ALLOWED_ORIGINS
+```
+
+`core_api.infrastructure.settings.CoreSettings` owns values required by Core itself:
+
+- service identity through `CORE_SERVICE_NAME`;
+- Core Postgres database;
+- Core Redis DB/namespace;
+- `CORE_DATABASE_URL` with `DATABASE_URL` fallback;
+- `CORE_REDIS_URL` with `REDIS_URL` fallback;
+- Core API CORS policy;
+- internal Auth URL and timeout for introspection.
 
 `core_api.infrastructure.platform_discovery.PlatformDiscoverySettings` owns values used by the Core landing page to describe the local platform:
 
@@ -153,7 +183,7 @@ Each API owns a small `infrastructure/settings.py` file for its own CORS policy.
 
 Public URLs are for browsers, docs and humans. Internal URLs are for service-to-service calls. In bare metal development both point to `localhost`; in Docker Compose internal URLs point to Compose service names such as `http://auth-api:8000`.
 
-Kafka settings remain in `.env` and Docker Compose because Kafka is part of the platform plan. When `eventing_api` starts using Kafka adapters for real, those runtime settings should move into `eventing_api/infrastructure/settings.py`.
+Kafka settings live in the `eventing_api` block because Eventing will govern topics, contracts and outbox behavior. Loki/Grafana/Sentry settings live in the `observability_api` block. Notification Redis settings live in the `notification_api` block.
 
 `auth_api.infrastructure.settings.AuthSettings` owns Auth-specific configuration for:
 
@@ -193,7 +223,9 @@ The test suite currently covers:
 - platform discovery settings;
 - database mixins;
 - shared datetime helper;
-- shared error contracts.
+- shared error contracts;
+- service-specific service-name settings;
+- shared CRUD route factory contracts.
 
 ## Toolbox
 
@@ -223,9 +255,8 @@ This runs `toolbox/seeds/auth_api/user_seed.py` and creates demo users with bcry
 
 The next implementation steps should be:
 
-- protect `core_api` through Auth;
-- decide the final backend-to-backend authorization strategy;
+- expand the backend-to-backend authorization strategy beyond the first Core guard;
 - add real Redis caching to `core_api` when behavior justifies it;
 - wire Kafka only when event/outbox behavior exists;
-- add service-specific settings to each API when each one starts using real providers;
+- fill service-specific settings as each provider becomes real code;
 - keep documentation updated as soon as a placeholder becomes code.

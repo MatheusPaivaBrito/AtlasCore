@@ -1,6 +1,6 @@
 # AtlasCore Overview
 
-AtlasCore is a FastAPI backend monorepo designed for interviews and for real project reuse.
+AtlasCore is a reusable FastAPI backend foundation with clear separation between product concerns, platform concerns and shared infrastructure.
 
 It combines product APIs, platform APIs, a planned worker runtime, a shared kernel, tests, Docker Compose, Alembic and MkDocs documentation.
 
@@ -18,9 +18,10 @@ The most concrete services right now are `core_api` and `auth_api`.
 - soft delete through `deleted_at` and restore routes;
 - text search and exact filters for query flows;
 - a `public_assets` module for public images/documents;
-- a CRUD route factory for simple resources.
+- a CRUD route factory for simple resources;
 - a shared structured error contract registered by every API;
-- settings split between Core database/cache concerns and platform discovery concerns.
+- settings split between Core database/cache concerns and platform discovery concerns;
+- command routes protected by Auth and public query routes for catalog reads.
 
 `auth_api` already has:
 
@@ -57,9 +58,9 @@ The most concrete services right now are `core_api` and `auth_api`.
 | --- | --- |
 | `worker` | Kafka consumers, outbox dispatching, projections and async jobs |
 
-## What This Project Is Trying to Prove
+## What This Project Is Trying to Provide
 
-AtlasCore is meant to show that the author can:
+AtlasCore is meant to provide a practical backend foundation that can:
 
 - Separate business concerns from platform concerns.
 - Avoid one microservice per tool while still designing a rich platform.
@@ -101,7 +102,7 @@ It shows:
 - MkDocs PT-BR and EN documentation links on `8080` and `8081`;
 - documentation server availability when MkDocs is running.
 
-The Core API Swagger UI is interview-friendly: dark theme, filter enabled, operations collapsed by default and route groups separated by resource, such as `books - query`, `books - command`, `shelves - query` and `shelves - command`.
+The Core API Swagger UI is optimized for technical reading: dark theme, filter enabled, operations collapsed by default and route groups separated by resource, such as `books - query`, `books - command`, `shelves - query` and `shelves - command`.
 
 ---
 

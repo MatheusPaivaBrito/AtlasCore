@@ -77,12 +77,12 @@ Important pieces:
 | `alembic/versions/20260606_0001_core_schema.py` | Initial schema for `library` and `public_assets`. |
 | `alembic/versions/20260606_0002_library_soft_delete_sections.py` | Adds soft delete, `library_sections` and book section location. |
 | `infrastructure/database/base.py` | SQLAlchemy declarative base and `BaseModel`. |
-| `infrastructure/database/connection.py` | Engine, session factory and FastAPI dependency. |
+| `infrastructure/database/connection.py` | Adapts shared SQLAlchemy helpers using Core settings. |
 | `infrastructure/database/loader.py` | Imports models for Alembic metadata discovery. |
-| `infrastructure/database/mixins.py` | Timestamp and soft-delete ORM behavior. |
 | `infrastructure/settings.py` | Core runtime settings for app identity, Postgres, Redis and CORS. |
 | `infrastructure/platform_discovery.py` | Landing-page settings for local service ports, public/internal URLs and docs links. |
-| `shared/crud/route_factory.py` | Conventional CRUD route factory for simple resources. |
+| `shared/auth/` | Core-side client and guards for validating access tokens through Auth API. |
+| `shared/crud/route_factory.py` | Core adapter around the shared CRUD route factory. |
 | `shared/exceptions.py` | Core-specific reusable application errors. |
 | `modules/library/` | First concrete domain with relationships and CRUD routes. |
 | `modules/public_assets/` | Public image/document metadata, backed by a storage provider. |
@@ -155,13 +155,21 @@ packages/
 Current concrete primitive:
 
 ```text
+shared_kernel/cache/json_store.py
 shared_kernel/errors/application.py
 shared_kernel/errors/handlers.py
 shared_kernel/http/cors.py
+shared_kernel/http/home.py
+shared_kernel/http/crud/
+shared_kernel/persistence/sqlalchemy/
 shared_kernel/time/datetime_service.py
 ```
 
 `shared_kernel/http/cors.py` centralizes the FastAPI middleware wiring, but each API still owns its own CORS policy through its local settings file.
+
+`shared_kernel/http/crud` centralizes the repetitive mechanics of simple CRUD. Each API injects its own session dependency, guards and error factory.
+
+`shared_kernel/persistence/sqlalchemy` centralizes engine creation, session factories, FastAPI session dependencies and ORM mixins. Each API still owns its own `settings.py`, declarative `Base` and Alembic history.
 
 Future folders for IDs or event contract primitives should be added only when real shared code exists.
 

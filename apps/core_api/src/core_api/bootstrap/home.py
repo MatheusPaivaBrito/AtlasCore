@@ -128,7 +128,7 @@ def home(request: Request):
         _documentation_site(
             name="MkDocs EN",
             port=platform_discovery_settings.DOCS_EN_PORT,
-            description="English interview-ready documentation, ADRs and talking points.",
+            description="English project documentation, ADRs and architecture talking points.",
         ),
     ]
 
