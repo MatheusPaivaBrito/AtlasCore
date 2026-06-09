@@ -154,6 +154,26 @@ class AuthSettings(BaseSettings):
     # PASSWORDS
     # ------------------------------------
     BCRYPT_ROUNDS: int = Field(default=12, validation_alias=AliasChoices("AUTH_BCRYPT_ROUNDS", "BCRYPT_ROUNDS"))
+    AUTH_PASSWORD_MIN_LENGTH: int = Field(
+        default=10,
+        validation_alias=AliasChoices("AUTH_PASSWORD_MIN_LENGTH", "PASSWORD_MIN_LENGTH"),
+    )
+    AUTH_PASSWORD_REQUIRE_UPPERCASE: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("AUTH_PASSWORD_REQUIRE_UPPERCASE", "PASSWORD_REQUIRE_UPPERCASE"),
+    )
+    AUTH_PASSWORD_REQUIRE_LOWERCASE: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("AUTH_PASSWORD_REQUIRE_LOWERCASE", "PASSWORD_REQUIRE_LOWERCASE"),
+    )
+    AUTH_PASSWORD_REQUIRE_NUMBER: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("AUTH_PASSWORD_REQUIRE_NUMBER", "PASSWORD_REQUIRE_NUMBER"),
+    )
+    AUTH_PASSWORD_REQUIRE_SPECIAL: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("AUTH_PASSWORD_REQUIRE_SPECIAL", "PASSWORD_REQUIRE_SPECIAL"),
+    )
 
     # ------------------------------------
     # CORS

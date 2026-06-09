@@ -35,6 +35,21 @@ class AuthInvalidCredentialsError(ApplicationError):
     message = "Invalid credentials."
 
 
+class AuthWeakPasswordError(ApplicationError):
+    status_code = status.HTTP_422_UNPROCESSABLE_CONTENT
+    code = "auth.weak_password"
+    message = "Password does not match the required security policy."
+
+    def __init__(self, *, missing_requirements: list[str]) -> None:
+        super().__init__(
+            target=ErrorTarget(
+                entity="auth_password_policy",
+                field="password",
+                payload={"missing_requirements": missing_requirements},
+            ),
+        )
+
+
 class AuthTooManyLoginAttemptsError(ApplicationError):
     status_code = status.HTTP_429_TOO_MANY_REQUESTS
     code = "auth.too_many_login_attempts"

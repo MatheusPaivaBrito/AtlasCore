@@ -2,6 +2,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from auth_api.modules.access_control.application.permissions import sync_user_permissions
+from auth_api.modules.auth.application.password_policy import password_policy
 from auth_api.modules.auth.application.passwords import hash_password
 from auth_api.modules.sessions.application.service import SessionService
 from auth_api.modules.users.user_commands import (
@@ -24,6 +25,7 @@ class UserCommandHandler:
 
     def create(self, command: CreateUserCommand) -> UserEntity:
         payload = command.payload
+        password_policy.validate(payload.password)
         user = UserEntity(
             email=payload.email,
             full_name=payload.full_name,
@@ -50,6 +52,7 @@ class UserCommandHandler:
             setattr(user, field_name, value)
 
         if password is not None:
+            password_policy.validate(password)
             if user.credential is None:
                 user.credential = UserCredentialEntity(password_hash=hash_password(password))
             else:

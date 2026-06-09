@@ -237,6 +237,30 @@ async def test_auth_login_rejects_invalid_credentials(auth_database: None) -> No
 
 
 @pytest.mark.asyncio
+async def test_auth_rejects_weak_password(auth_database: None) -> None:
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post(
+            "/users",
+            json={
+                "email": "user@atlas.local",
+                "full_name": "Atlas User",
+                "password": "weakpass",
+            },
+        )
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "auth.weak_password"
+    assert set(response.json()["error"]["target"]["payload"]["missing_requirements"]) == {
+        "min_length",
+        "uppercase",
+        "number",
+        "special",
+    }
+
+
+@pytest.mark.asyncio
 async def test_auth_password_recovery_resets_password(
     auth_database: None,
     monkeypatch: pytest.MonkeyPatch,

@@ -11,6 +11,7 @@ from auth_api.modules.access_control.application.permissions import serialize_us
 from auth_api.modules.auth.application.cookies import REFRESH_TOKEN_COOKIE, clear_auth_cookies, set_auth_cookies
 from auth_api.modules.auth.application.guards import auth_guard, bearer_scheme
 from auth_api.modules.auth.application.login_attempts import LoginAttemptService
+from auth_api.modules.auth.application.password_policy import password_policy
 from auth_api.modules.auth.application.password_recovery import PasswordRecoveryService
 from auth_api.modules.auth.application.passwords import hash_password, verify_password
 from auth_api.modules.auth.application.service_auth import InternalService, internal_service_guard
@@ -47,6 +48,7 @@ internal_router = APIRouter(prefix="/internal/auth", tags=["internal-auth"])
 
 
 def _set_user_password(user: UserEntity, new_password: str) -> None:
+    password_policy.validate(new_password)
     user.credential.password_hash = hash_password(new_password)
     user.credential.password_updated_at = DateTimeService.utc_now()
     user.token_version += 1
