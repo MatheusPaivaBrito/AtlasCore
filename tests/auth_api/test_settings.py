@@ -13,9 +13,14 @@ def test_auth_settings_build_database_and_redis_urls() -> None:
         AUTH_REDIS_DB=3,
         AUTH_REDIS_KEY_PREFIX="auth",
         AUTH_BCRYPT_ROUNDS=12,
+        AUTH_INTERNAL_SERVICE_KEYS="core_api:secret,notification_api:other-secret",
     )
 
     assert settings.DATABASE_URL == "postgresql+psycopg://atlas:secret@postgres:5433/atlas_auth_test"
     assert settings.REDIS_URL == "redis://redis:6380/3"
     assert settings.REDIS_KEY_PREFIX == "auth"
     assert settings.BCRYPT_ROUNDS == 12
+    assert settings.INTERNAL_SERVICE_KEYS == {
+        "core_api": "secret",
+        "notification_api": "other-secret",
+    }

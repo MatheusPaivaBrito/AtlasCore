@@ -7,8 +7,8 @@ from auth_api.infrastructure.database.connection import get_session
 from auth_api.modules.access_control.application.permissions import serialize_user_permissions, sync_user_permissions
 from auth_api.modules.access_control.presentation.schemas import AccessProfileRead, PermissionSyncRequest
 from auth_api.modules.auth.application.guards import auth_guard
-from auth_api.modules.users.domain.user_entity import UserEntity
-from auth_api.modules.users.presentation.routes import _load_user
+from auth_api.modules.users.user_entity import UserEntity
+from auth_api.modules.users.user_router import _load_user
 
 router = APIRouter(prefix="/access-control")
 

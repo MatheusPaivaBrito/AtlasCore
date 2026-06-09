@@ -19,7 +19,9 @@ Auth currently has:
 - per-user device limits;
 - `token_version` for revoking old tokens and sessions;
 - user-level permissions;
+- a typed permission catalog in code;
 - FastAPI guards for authenticated users and explicit permissions;
+- service-to-service authentication for internal routes;
 - an idempotent seed with demo users and permissions.
 
 ## Database
@@ -118,16 +120,38 @@ apps/auth_api/src/auth_api/
         permissions.py
       domain/
         permission_entity.py
+        permissions.py
       presentation/
         routes.py
         schemas.py
     users/
-      domain/
-        user_entity.py
-      presentation/
-        routes.py
-        schemas.py
+      user_commands.py
+      user_command_handlers.py
+      user_entity.py
+      user_queries.py
+      user_query_handlers.py
+      user_router.py
+      user_schema.py
 ```
+
+## Users Verticalization
+
+`modules/users` already follows the same vertical pattern used by Core:
+
+```text
+modules/users/
+  user_entity.py
+  user_schema.py
+  user_router.py
+  user_commands.py
+  user_queries.py
+  user_command_handlers.py
+  user_query_handlers.py
+```
+
+This keeps entity, schemas, router, commands, queries and handlers for one resource together.
+
+`sessions`, `access_control` and `auth` can follow the same pattern as they grow, but they should not gain empty files just for symmetry.
 
 ## Login Flow
 
@@ -304,6 +328,39 @@ Rules:
 - tokens without a Redis session are rejected;
 - `token_version` mismatch revokes the session.
 
+## Permission Catalog
+
+Permissions live in a typed code catalog, not raw strings scattered across routes and seeds.
+
+File:
+
+```text
+modules/access_control/domain/permissions.py
+```
+
+The catalog declares known domains and actions:
+
+```text
+users:read
+users:write
+users:delete
+sessions:read
+sessions:delete
+access_control:read
+access_control:write
+books:write
+books:delete
+```
+
+Benefits:
+
+- fewer typos;
+- safer seeds;
+- shared language between Core and Auth;
+- easier cross-API contract tests.
+
+The seed uses this catalog to create administrative and library-operator permissions.
+
 ## First User Bootstrap
 
 There is one intentional exception: if `auth_users` is empty, `POST /users` allows creating the first user without a token.
@@ -354,6 +411,12 @@ users:write
 | `GET` | `/access-control/users/{user_id}/permissions` | `access_control:read` | Read another user's permissions. |
 | `PUT` | `/access-control/users/{user_id}/permissions` | `access_control:write` | Replace another user's permissions. |
 
+### Internal Auth
+
+| Method | Path | Internal headers | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/internal/auth/introspect` | `X-Atlas-Service`, `X-Atlas-Service-Key` | Validate token, session and permission for another API. |
+
 ## Local Commands
 
 ```bash
@@ -368,8 +431,8 @@ The seed creates or updates:
 
 | E-mail | Password | State | Permissions |
 | --- | --- | --- | --- |
-| `admin@atlas.local` | `AtlasAdmin123!` | Active, superuser | 7 administrative permissions. |
-| `librarian@atlas.local` | `AtlasUser123!` | Active | `users:read`, `sessions:read`. |
+| `admin@atlas.local` | `AtlasAdmin123!` | Active, superuser | Auth administrative permissions and Core command permissions. |
+| `librarian@atlas.local` | `AtlasUser123!` | Active | Library-operator permissions. |
 | `blocked@atlas.local` | `AtlasBlocked123!` | Inactive | None. |
 
 The seed is idempotent. It can run again without duplicating users or permissions.
@@ -391,8 +454,20 @@ Bearer <access_token>
 
 Protected routes can then be tested from Swagger.
 
-## What Is Not Integrated Yet
+## Core Integration
 
-`core_api` does not depend on Auth yet to protect the library domain.
+`core_api` uses Auth to protect library command routes.
 
-The current decision is to make Auth solid first. Later, Core can validate Auth-issued tokens or call an internal authorization endpoint, depending on the chosen backend-to-backend communication strategy.
+Core does not read Auth database or Redis state. It calls an internal introspection route, sending:
+
+- the user access token;
+- the required permission;
+- `X-Atlas-Service`;
+- `X-Atlas-Service-Key`.
+
+Related settings:
+
+```text
+CORE_TO_AUTH_SERVICE_KEY=atlas-core-to-auth-dev-key
+AUTH_INTERNAL_SERVICE_KEYS=core_api:atlas-core-to-auth-dev-key
+```

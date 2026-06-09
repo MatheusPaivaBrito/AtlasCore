@@ -16,6 +16,7 @@ def test_settings_builds_connection_values_from_env_parts() -> None:
         CORE_REDIS_KEY_PREFIX="core",
         AUTH_API_INTERNAL_URL="http://auth-api:8000",
         AUTH_INTROSPECTION_TIMEOUT_SECONDS=0.7,
+        CORE_TO_AUTH_SERVICE_KEY="core-secret",
     )
 
     assert settings.DEBUG is False
@@ -25,6 +26,7 @@ def test_settings_builds_connection_values_from_env_parts() -> None:
     assert settings.AUTH_API_INTERNAL_URL == "http://auth-api:8000"
     assert settings.AUTH_INTROSPECTION_PATH == "/internal/auth/introspect"
     assert settings.AUTH_INTROSPECTION_TIMEOUT_SECONDS == 0.7
+    assert settings.CORE_TO_AUTH_SERVICE_KEY == "core-secret"
 
 
 def test_settings_allow_connection_url_overrides() -> None:

@@ -4,7 +4,7 @@ from auth_api.modules.auth.application.cookies import clear_auth_cookies
 from auth_api.modules.auth.application.guards import auth_guard
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
 from auth_api.modules.sessions.presentation.schemas import SessionRead
-from auth_api.modules.users.domain.user_entity import UserEntity
+from auth_api.modules.users.user_entity import UserEntity
 
 router = APIRouter(prefix="/sessions")
 

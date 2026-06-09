@@ -130,11 +130,13 @@ Fluxo do guard:
 
 ## Estado atual da integração
 
-Hoje o `auth_api` protege suas próprias rotas.
+Hoje o `auth_api` protege suas próprias rotas e a `core_api` já usa Auth para rotas de command.
 
-`core_api` ainda não foi protegido pelo Auth. Isso será uma etapa separada, porque existem duas estratégias possíveis:
+Na Core, a regra atual e:
 
-- Core valida JWT localmente usando as chaves públicas/segredos corretos;
-- Core chama Auth por uma rota interna de autorização/introspecção.
+- rotas de query ficam publicas para catalogo;
+- rotas de command chamam Auth por introspeccao interna;
+- Core envia credenciais internas de servico;
+- Auth valida servico chamador, token, sessao Redis, usuario, `token_version` e permissao `domain:action`.
 
-A escolha depende de como o projeto vai tratar comunicação backend-to-backend.
+O contrato completo entre Auth e Core esta documentado em [Contrato Auth/Core](contrato-auth-core.md).

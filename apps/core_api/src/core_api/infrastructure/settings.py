@@ -100,6 +100,10 @@ class CoreSettings(BaseSettings):
         default=1.0,
         validation_alias=AliasChoices("AUTH_INTROSPECTION_TIMEOUT_SECONDS", "AUTH_API_CHECK_TIMEOUT_SECONDS"),
     )
+    CORE_TO_AUTH_SERVICE_KEY: str = Field(
+        default="atlas-core-to-auth-dev-key",
+        validation_alias=AliasChoices("CORE_TO_AUTH_SERVICE_KEY", "AUTH_SERVICE_API_KEY"),
+    )
 
     # ------------------------------------
     # PYDANTIC

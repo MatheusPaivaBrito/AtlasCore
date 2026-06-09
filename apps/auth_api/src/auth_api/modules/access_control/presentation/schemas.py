@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from auth_api.modules.users.presentation.schemas import PermissionPayload
+from auth_api.modules.users.user_schema import PermissionPayload
 
 
 class AccessProfileRead(BaseModel):

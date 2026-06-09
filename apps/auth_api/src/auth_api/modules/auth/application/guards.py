@@ -12,7 +12,7 @@ from auth_api.modules.access_control.application.permissions import user_has_per
 from auth_api.modules.auth.application.cookies import ACCESS_TOKEN_COOKIE
 from auth_api.modules.auth.application.tokens import jwt_service
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
-from auth_api.modules.users.domain.user_entity import UserEntity
+from auth_api.modules.users.user_entity import UserEntity
 from auth_api.shared.exceptions import (
     AuthInactiveUserError,
     AuthInvalidSessionError,

@@ -58,6 +58,7 @@ nav:
       - Service Catalog: architecture/service-catalog.md
       - Service Boundaries: architecture/service-boundaries.md
       - Security and RBAC: architecture/security-rbac.md
+      - Auth/Core Contract: architecture/auth-core-contract.md
       - DDD and Clean Architecture: architecture/ddd-clean-architecture.md
       - Error Handling: architecture/error-handling.md
   - Product APIs:

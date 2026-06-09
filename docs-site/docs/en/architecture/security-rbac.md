@@ -130,11 +130,13 @@ Guard flow:
 
 ## Current Integration State
 
-Today `auth_api` protects its own routes.
+Today `auth_api` protects its own routes and `core_api` already uses Auth for command routes.
 
-`core_api` is not protected by Auth yet. That will be a separate step because there are two reasonable strategies:
+In Core, the current rule is:
 
-- Core validates JWT locally with the correct secrets/public keys;
-- Core calls Auth through an internal authorization/introspection endpoint.
+- query routes stay public for catalog reads;
+- command routes call Auth through internal introspection;
+- Core sends internal service credentials;
+- Auth validates the calling service, token, Redis session, user, `token_version` and `domain:action` permission.
 
-The choice depends on the final backend-to-backend communication strategy.
+The full Auth/Core contract is documented in [Auth/Core Contract](auth-core-contract.md).

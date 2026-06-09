@@ -75,3 +75,17 @@ class AuthPermissionDeniedError(ApplicationError):
             message=f"Missing permission: {domain}:{action}.",
             target=ErrorTarget(entity="auth_user_permissions", payload={"domain": domain, "action": action}),
         )
+
+
+class AuthServiceAuthenticationError(ApplicationError):
+    status_code = status.HTTP_403_FORBIDDEN
+    code = "auth.service_authentication_failed"
+    message = "Calling service is not allowed to access this internal Auth route."
+
+    def __init__(self, *, service_name: str | None = None) -> None:
+        super().__init__(
+            target=ErrorTarget(
+                entity="internal_service",
+                payload={"service_name": service_name or "unknown"},
+            ),
+        )

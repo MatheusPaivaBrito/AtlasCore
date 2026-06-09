@@ -6,7 +6,7 @@ from uuid import UUID
 
 from auth_api.infrastructure.settings import settings
 from auth_api.modules.sessions.application.stores import RedisSessionStore, SessionStore
-from auth_api.modules.users.domain.user_entity import UserEntity
+from auth_api.modules.users.user_entity import UserEntity
 from shared_kernel.time import DateTimeService
 
 

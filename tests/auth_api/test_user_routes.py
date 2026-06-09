@@ -12,6 +12,11 @@ from auth_api.main import app
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
 from auth_api.modules.sessions.application.stores import InMemorySessionStore
 
+SERVICE_HEADERS = {
+    "X-Atlas-Service": "core_api",
+    "X-Atlas-Service-Key": "atlas-core-to-auth-dev-key",
+}
+
 
 @pytest.fixture
 def auth_database() -> Generator[None, None, None]:
@@ -91,7 +96,7 @@ async def test_auth_user_crud_restore_and_login(auth_database: None) -> None:
 
         admin_introspection_response = await client.post(
             "/internal/auth/introspect",
-            headers=auth_headers,
+            headers={**auth_headers, **SERVICE_HEADERS},
             json={"required_permission": {"domain": "users", "action": "delete"}},
         )
         assert admin_introspection_response.status_code == 200
@@ -149,7 +154,7 @@ async def test_auth_user_crud_restore_and_login(auth_database: None) -> None:
 
         allowed_introspection_response = await client.post(
             "/internal/auth/introspect",
-            headers=user_headers,
+            headers={**user_headers, **SERVICE_HEADERS},
             json={"required_permission": {"domain": "users", "action": "read"}},
         )
         assert allowed_introspection_response.status_code == 200
@@ -157,7 +162,7 @@ async def test_auth_user_crud_restore_and_login(auth_database: None) -> None:
 
         denied_introspection_response = await client.post(
             "/internal/auth/introspect",
-            headers=user_headers,
+            headers={**user_headers, **SERVICE_HEADERS},
             json={"required_permission": {"domain": "users", "action": "write"}},
         )
         assert denied_introspection_response.status_code == 200
@@ -199,6 +204,43 @@ async def test_auth_login_rejects_invalid_credentials(auth_database: None) -> No
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "auth.invalid_credentials"
+
+
+@pytest.mark.asyncio
+async def test_auth_introspection_requires_internal_service_credentials(auth_database: None) -> None:
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post(
+            "/users",
+            json={
+                "email": "admin@atlas.local",
+                "full_name": "Atlas Admin",
+                "password": "AtlasAdmin123!",
+                "is_superuser": True,
+            },
+        )
+        login_response = await client.post(
+            "/auth/login",
+            json={"email": "admin@atlas.local", "password": "AtlasAdmin123!"},
+        )
+        auth_headers = {"Authorization": f"Bearer {login_response.json()['access_token']}"}
+
+        missing_service_response = await client.post(
+            "/internal/auth/introspect",
+            headers=auth_headers,
+            json={"required_permission": {"domain": "books", "action": "write"}},
+        )
+        invalid_service_response = await client.post(
+            "/internal/auth/introspect",
+            headers={**auth_headers, "X-Atlas-Service": "core_api", "X-Atlas-Service-Key": "wrong"},
+            json={"required_permission": {"domain": "books", "action": "write"}},
+        )
+
+    assert missing_service_response.status_code == 403
+    assert missing_service_response.json()["error"]["code"] == "auth.service_authentication_failed"
+    assert invalid_service_response.status_code == 403
+    assert invalid_service_response.json()["error"]["code"] == "auth.service_authentication_failed"
 
 
 def test_auth_user_routes_are_registered() -> None:

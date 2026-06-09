@@ -2,10 +2,12 @@ from uuid import uuid4
 
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
+import orjson
 import pytest
 
 from core_api.bootstrap.exceptions import register_api_exception_handlers
-from core_api.shared.auth.client import get_auth_introspection_client
+from core_api.shared.auth import client as auth_client_module
+from core_api.shared.auth.client import AuthIntrospectionClient, get_auth_introspection_client
 from core_api.shared.auth.guards import core_auth_guard
 from core_api.shared.auth.schemas import AuthIntrospectionResponse, AuthorizedUser, RequiredPermission
 
@@ -87,3 +89,51 @@ async def test_core_auth_guard_rejects_denied_permission() -> None:
 
     assert response.status_code == 403
     assert response.json()["error"]["code"] == "core_api.authorization_denied"
+
+
+def test_core_auth_client_sends_internal_service_headers(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured_headers: dict[str, str] = {}
+    user_id = uuid4()
+
+    class FakeResponse:
+        def __enter__(self) -> "FakeResponse":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            return None
+
+        @staticmethod
+        def read() -> bytes:
+            return orjson.dumps(
+                {
+                    "active": True,
+                    "allowed": True,
+                    "user": {
+                        "id": str(user_id),
+                        "email": "admin@atlas.local",
+                        "is_active": True,
+                        "is_superuser": True,
+                        "token_version": 1,
+                    },
+                    "permissions": [{"domain": "books", "action": "write"}],
+                    "required_permission": {"domain": "books", "action": "write"},
+                }
+            )
+
+    def fake_urlopen(request, timeout: float) -> FakeResponse:
+        captured_headers.update({key.lower(): value for key, value in request.header_items()})
+        return FakeResponse()
+
+    monkeypatch.setattr(auth_client_module.settings, "SERVICE_NAME", "core_api")
+    monkeypatch.setattr(auth_client_module.settings, "CORE_TO_AUTH_SERVICE_KEY", "core-secret")
+    monkeypatch.setattr(auth_client_module, "urlopen", fake_urlopen)
+
+    response = AuthIntrospectionClient().introspect(
+        access_token="access-token",
+        required_permission=RequiredPermission(domain="books", action="write"),
+    )
+
+    assert response.allowed is True
+    assert captured_headers["authorization"] == "Bearer access-token"
+    assert captured_headers["x-atlas-service"] == "core_api"
+    assert captured_headers["x-atlas-service-key"] == "core-secret"

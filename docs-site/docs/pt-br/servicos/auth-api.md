@@ -19,7 +19,9 @@ Hoje o Auth já possui:
 - limite de dispositivos por usuário;
 - `token_version` para revogar sessões/tokens antigos;
 - tabela de permissões por usuário;
+- catálogo tipado de permissões em código;
 - guards FastAPI para usuário autenticado e permissão específica;
+- autenticação service-to-service para rotas internas;
 - seed idempotente com usuários e permissões de demo.
 
 ## Banco de dados
@@ -118,16 +120,38 @@ apps/auth_api/src/auth_api/
         permissions.py
       domain/
         permission_entity.py
+        permissions.py
       presentation/
         routes.py
         schemas.py
     users/
-      domain/
-        user_entity.py
-      presentation/
-        routes.py
-        schemas.py
+      user_commands.py
+      user_command_handlers.py
+      user_entity.py
+      user_queries.py
+      user_query_handlers.py
+      user_router.py
+      user_schema.py
 ```
+
+## Verticalização de Users
+
+`modules/users` já segue o padrão vertical usado na Core:
+
+```text
+modules/users/
+  user_entity.py
+  user_schema.py
+  user_router.py
+  user_commands.py
+  user_queries.py
+  user_command_handlers.py
+  user_query_handlers.py
+```
+
+Isso deixa entidade, schemas, router, commands, queries e handlers do mesmo recurso juntos.
+
+`sessions`, `access_control` e `auth` tambem podem seguir esse padrão quando crescerem, mas nao devem ganhar arquivos vazios so por simetria.
 
 ## Fluxo de login
 
@@ -304,6 +328,39 @@ Regra:
 - token com sessão ausente no Redis é recusado;
 - divergência de `token_version` revoga a sessão.
 
+## Catálogo de permissões
+
+Permissões vivem em catálogo tipado, não como strings soltas espalhadas por rotas e seeds.
+
+Arquivo:
+
+```text
+modules/access_control/domain/permissions.py
+```
+
+Esse catálogo declara os domínios e ações conhecidas:
+
+```text
+users:read
+users:write
+users:delete
+sessions:read
+sessions:delete
+access_control:read
+access_control:write
+books:write
+books:delete
+```
+
+Benefícios:
+
+- reduz typo;
+- deixa seeds mais seguras;
+- ajuda a Core e o Auth a falarem a mesma linguagem;
+- facilita teste de contrato entre APIs.
+
+O seed usa esse catálogo para criar permissões administrativas e operacionais de livraria.
+
 ## Bootstrap do primeiro usuário
 
 Existe uma exceção intencional: se `auth_users` estiver vazio, `POST /users` permite criar o primeiro usuário sem token.
@@ -354,6 +411,12 @@ users:write
 | `GET` | `/access-control/users/{user_id}/permissions` | `access_control:read` | Ver permissões de outro usuário. |
 | `PUT` | `/access-control/users/{user_id}/permissions` | `access_control:write` | Substituir permissões de outro usuário. |
 
+### Internal Auth
+
+| Método | Path | Headers internos | Objetivo |
+| --- | --- | --- | --- |
+| `POST` | `/internal/auth/introspect` | `X-Atlas-Service`, `X-Atlas-Service-Key` | Validar token, sessão e permissão para outra API. |
+
 ## Comandos locais
 
 ```bash
@@ -368,8 +431,8 @@ O seed cria ou atualiza:
 
 | E-mail | Senha | Estado | Permissões |
 | --- | --- | --- | --- |
-| `admin@atlas.local` | `AtlasAdmin123!` | Ativo, superuser | 7 permissões administrativas. |
-| `librarian@atlas.local` | `AtlasUser123!` | Ativo | `users:read`, `sessions:read`. |
+| `admin@atlas.local` | `AtlasAdmin123!` | Ativo, superuser | Permissões administrativas do Auth e commands do Core. |
+| `librarian@atlas.local` | `AtlasUser123!` | Ativo | Permissões operacionais de livraria. |
 | `blocked@atlas.local` | `AtlasBlocked123!` | Inativo | Nenhuma. |
 
 O seed é idempotente. Ele pode ser rodado de novo sem duplicar usuários ou permissões.
@@ -391,8 +454,20 @@ Bearer <access_token>
 
 Depois disso, as rotas protegidas podem ser testadas pelo Swagger.
 
-## O que ainda não foi integrado
+## Integração com Core
 
-`core_api` ainda não depende do Auth para proteger o domínio de livraria.
+`core_api` usa o Auth para proteger rotas de command do domínio de livraria.
 
-A decisão atual é deixar o Auth sólido primeiro. Depois, a Core pode validar tokens emitidos pelo Auth ou chamar uma rota interna de autorização, dependendo da estratégia escolhida para comunicação entre backends.
+A Core nao lê banco ou Redis do Auth. Ela chama uma rota interna de introspeccao, enviando:
+
+- access token do usuário;
+- permissão exigida;
+- `X-Atlas-Service`;
+- `X-Atlas-Service-Key`.
+
+Configurações relacionadas:
+
+```text
+CORE_TO_AUTH_SERVICE_KEY=atlas-core-to-auth-dev-key
+AUTH_INTERNAL_SERVICE_KEYS=core_api:atlas-core-to-auth-dev-key
+```

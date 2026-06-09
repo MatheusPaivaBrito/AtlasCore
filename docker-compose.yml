@@ -117,6 +117,7 @@ services:
       AUTH_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${AUTH_POSTGRES_DB:-atlas_auth}
       AUTH_REDIS_URL: redis://redis:6379/${AUTH_REDIS_DB:-1}
       AUTH_REDIS_KEY_PREFIX: ${AUTH_REDIS_KEY_PREFIX:-auth}
+      AUTH_INTERNAL_SERVICE_KEYS: ${AUTH_INTERNAL_SERVICE_KEYS:-core_api:atlas-core-to-auth-dev-key}
     ports:
       - "${AUTH_API_PORT:-8001}:8000"
     depends_on:
@@ -136,6 +137,7 @@ services:
       AUTH_POSTGRES_DB: ${AUTH_POSTGRES_DB:-atlas_auth}
       AUTH_REDIS_DB: ${AUTH_REDIS_DB:-1}
       AUTH_REDIS_KEY_PREFIX: ${AUTH_REDIS_KEY_PREFIX:-auth}
+      AUTH_INTERNAL_SERVICE_KEYS: ${AUTH_INTERNAL_SERVICE_KEYS:-core_api:atlas-core-to-auth-dev-key}
     command: >
       sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py auth_api
       && poetry run alembic -c apps/auth_api/alembic.ini upgrade head"
@@ -157,6 +159,7 @@ services:
       AUTH_POSTGRES_DB: ${AUTH_POSTGRES_DB:-atlas_auth}
       AUTH_REDIS_DB: ${AUTH_REDIS_DB:-1}
       AUTH_REDIS_KEY_PREFIX: ${AUTH_REDIS_KEY_PREFIX:-auth}
+      AUTH_INTERNAL_SERVICE_KEYS: ${AUTH_INTERNAL_SERVICE_KEYS:-core_api:atlas-core-to-auth-dev-key}
     command: >
       sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py auth_api
       && poetry run alembic -c apps/auth_api/alembic.ini upgrade head
@@ -180,6 +183,7 @@ services:
       CORE_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-atlas}:${POSTGRES_PASSWORD:-atlas}@postgres:5432/${CORE_POSTGRES_DB:-atlas_core}
       CORE_REDIS_URL: redis://redis:6379/${CORE_REDIS_DB:-1}
       CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-core}
+      CORE_TO_AUTH_SERVICE_KEY: ${CORE_TO_AUTH_SERVICE_KEY:-atlas-core-to-auth-dev-key}
     ports:
       - "${CORE_API_PORT:-8000}:8000"
     depends_on:
@@ -199,6 +203,7 @@ services:
       CORE_POSTGRES_DB: ${CORE_POSTGRES_DB:-atlas_core}
       CORE_REDIS_DB: ${CORE_REDIS_DB:-1}
       CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-core}
+      CORE_TO_AUTH_SERVICE_KEY: ${CORE_TO_AUTH_SERVICE_KEY:-atlas-core-to-auth-dev-key}
     command: >
       sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py core_api
       && poetry run alembic -c apps/core_api/alembic.ini upgrade head"
@@ -220,6 +225,7 @@ services:
       CORE_POSTGRES_DB: ${CORE_POSTGRES_DB:-atlas_core}
       CORE_REDIS_DB: ${CORE_REDIS_DB:-1}
       CORE_REDIS_KEY_PREFIX: ${CORE_REDIS_KEY_PREFIX:-core}
+      CORE_TO_AUTH_SERVICE_KEY: ${CORE_TO_AUTH_SERVICE_KEY:-atlas-core-to-auth-dev-key}
     command: >
       sh -c "poetry run python toolbox/checks/ensure_runtime_dependencies.py core_api
       && poetry run alembic -c apps/core_api/alembic.ini upgrade head

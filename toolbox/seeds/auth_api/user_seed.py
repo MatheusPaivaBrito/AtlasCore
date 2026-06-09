@@ -7,8 +7,9 @@ from sqlalchemy.orm import Session
 
 from auth_api.infrastructure.database.connection import SessionLocal
 from auth_api.modules.access_control.application.permissions import sync_user_permissions
+from auth_api.modules.access_control.domain.permissions import ATLAS_ADMIN_PERMISSIONS, LIBRARIAN_PERMISSIONS
 from auth_api.modules.auth.application.passwords import hash_password
-from auth_api.modules.users.domain.user_entity import UserCredentialEntity, UserEntity
+from auth_api.modules.users.user_entity import UserCredentialEntity, UserEntity
 
 
 @dataclass
@@ -75,15 +76,7 @@ def seed_auth_users(session: Session) -> SeedStats:
         password="AtlasAdmin123!",
         is_active=True,
         is_superuser=True,
-        permissions=[
-            {"domain": "users", "action": "read"},
-            {"domain": "users", "action": "write"},
-            {"domain": "users", "action": "delete"},
-            {"domain": "sessions", "action": "read"},
-            {"domain": "sessions", "action": "delete"},
-            {"domain": "access_control", "action": "read"},
-            {"domain": "access_control", "action": "write"},
-        ],
+        permissions=[permission.as_payload() for permission in ATLAS_ADMIN_PERMISSIONS],
         stats=stats,
     )
     _upsert_user(
@@ -93,10 +86,7 @@ def seed_auth_users(session: Session) -> SeedStats:
         password="AtlasUser123!",
         is_active=True,
         is_superuser=False,
-        permissions=[
-            {"domain": "users", "action": "read"},
-            {"domain": "sessions", "action": "read"},
-        ],
+        permissions=[permission.as_payload() for permission in LIBRARIAN_PERMISSIONS],
         stats=stats,
     )
     _upsert_user(

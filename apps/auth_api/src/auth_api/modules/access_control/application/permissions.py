@@ -7,13 +7,17 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, selectinload
 
 from auth_api.modules.access_control.domain.permission_entity import UserPermissionEntity
-from auth_api.modules.users.domain.user_entity import UserEntity
+from auth_api.modules.access_control.domain.permissions import PermissionDefinition
+from auth_api.modules.users.user_entity import UserEntity
 
 
-PermissionInput = dict[str, str]
+PermissionInput = dict[str, str] | PermissionDefinition
 
 
-def normalize_permission(permission: PermissionInput) -> PermissionInput:
+def normalize_permission(permission: PermissionInput) -> dict[str, str]:
+    if isinstance(permission, PermissionDefinition):
+        permission = permission.as_payload()
+
     return {
         "domain": permission["domain"].strip().lower(),
         "action": permission["action"].strip().lower(),

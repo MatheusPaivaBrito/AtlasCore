@@ -55,6 +55,7 @@ nav:
       - Visão Arquitetural: arquitetura/visao-geral.md
       - Catálogo de Serviços: arquitetura/catalogo-servicos.md
       - Fronteiras: arquitetura/fronteiras.md
+      - Contrato Auth/Core: arquitetura/contrato-auth-core.md
       - DDD e Clean Architecture: arquitetura/ddd-clean-architecture.md
   - Serviços:
       - Auth API: servicos/auth-api.md

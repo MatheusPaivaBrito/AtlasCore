@@ -109,6 +109,28 @@ class AuthSettings(BaseSettings):
         return self.JWT_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
 
     # ------------------------------------
+    # INTERNAL SERVICE AUTH
+    # ------------------------------------
+    INTERNAL_SERVICE_KEYS_RAW: str = Field(
+        default="core_api:atlas-core-to-auth-dev-key",
+        validation_alias=AliasChoices("AUTH_INTERNAL_SERVICE_KEYS", "INTERNAL_SERVICE_KEYS"),
+    )
+
+    @property
+    def INTERNAL_SERVICE_KEYS(self) -> dict[str, str]:
+        keys: dict[str, str] = {}
+        for item in self.INTERNAL_SERVICE_KEYS_RAW.split(","):
+            service_pair = item.strip()
+            if not service_pair or ":" not in service_pair:
+                continue
+            service_name, service_key = service_pair.split(":", 1)
+            service_name = service_name.strip()
+            service_key = service_key.strip()
+            if service_name and service_key:
+                keys[service_name] = service_key
+        return keys
+
+    # ------------------------------------
     # PASSWORDS
     # ------------------------------------
     BCRYPT_ROUNDS: int = Field(default=12, validation_alias=AliasChoices("AUTH_BCRYPT_ROUNDS", "BCRYPT_ROUNDS"))

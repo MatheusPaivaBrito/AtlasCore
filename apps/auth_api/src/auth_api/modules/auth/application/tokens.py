@@ -8,7 +8,7 @@ from uuid import uuid4
 import jwt
 
 from auth_api.infrastructure.settings import settings
-from auth_api.modules.users.domain.user_entity import UserEntity
+from auth_api.modules.users.user_entity import UserEntity
 from auth_api.shared.exceptions import AuthExpiredTokenError, AuthInvalidTokenError
 from shared_kernel.time import DateTimeService
 

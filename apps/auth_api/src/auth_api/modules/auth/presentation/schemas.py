@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
-from auth_api.modules.users.presentation.schemas import PermissionPayload, UserRead
+from auth_api.modules.users.user_schema import PermissionPayload, UserRead
 
 
 class LoginRequest(BaseModel):
