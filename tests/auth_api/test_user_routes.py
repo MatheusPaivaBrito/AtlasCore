@@ -105,6 +105,12 @@ async def test_auth_user_crud_restore_and_login(auth_database: None) -> None:
         assert admin_introspection_response.json()["allowed"] is True
         assert admin_introspection_response.json()["user"]["email"] == "admin@atlas.local"
 
+        catalog_response = await client.get("/access-control/permissions/catalog", headers=auth_headers)
+        assert catalog_response.status_code == 200
+        catalog_values = {permission["value"] for permission in catalog_response.json()}
+        assert "access_control:read" in catalog_values
+        assert "books:write" in catalog_values
+
         create_response = await client.post(
             "/users",
             headers=auth_headers,
@@ -368,3 +374,4 @@ def test_auth_user_routes_are_registered() -> None:
     assert "/internal/auth/introspect" in paths
     assert "/sessions/me" in paths
     assert "/access-control/me" in paths
+    assert "/access-control/permissions/catalog" in paths

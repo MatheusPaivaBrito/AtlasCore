@@ -11,5 +11,12 @@ class AccessProfileRead(BaseModel):
     permissions: list[PermissionPayload] = Field(default_factory=list)
 
 
+class PermissionCatalogItemRead(BaseModel):
+    value: str
+    domain: str
+    action: str
+    description: str
+
+
 class PermissionSyncRequest(BaseModel):
     permissions: list[PermissionPayload] = Field(default_factory=list)
