@@ -14,6 +14,11 @@ def test_auth_settings_build_database_and_redis_urls() -> None:
         AUTH_REDIS_KEY_PREFIX="auth",
         AUTH_BCRYPT_ROUNDS=12,
         AUTH_INTERNAL_SERVICE_KEYS="core_api:secret,notification_api:other-secret",
+        AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS=1200,
+        AUTH_EXPOSE_PASSWORD_RESET_TOKEN=True,
+        AUTH_LOGIN_MAX_ATTEMPTS=4,
+        AUTH_LOGIN_WINDOW_SECONDS=300,
+        AUTH_LOGIN_BLOCK_SECONDS=600,
     )
 
     assert settings.DATABASE_URL == "postgresql+psycopg://atlas:secret@postgres:5433/atlas_auth_test"
@@ -24,3 +29,8 @@ def test_auth_settings_build_database_and_redis_urls() -> None:
         "core_api": "secret",
         "notification_api": "other-secret",
     }
+    assert settings.AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS == 1200
+    assert settings.AUTH_EXPOSE_PASSWORD_RESET_TOKEN is True
+    assert settings.AUTH_LOGIN_MAX_ATTEMPTS == 4
+    assert settings.AUTH_LOGIN_WINDOW_SECONDS == 300
+    assert settings.AUTH_LOGIN_BLOCK_SECONDS == 600

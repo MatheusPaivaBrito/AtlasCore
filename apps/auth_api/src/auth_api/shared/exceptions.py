@@ -35,6 +35,12 @@ class AuthInvalidCredentialsError(ApplicationError):
     message = "Invalid credentials."
 
 
+class AuthTooManyLoginAttemptsError(ApplicationError):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "auth.too_many_login_attempts"
+    message = "Too many failed login attempts. Try again later."
+
+
 class AuthInactiveUserError(ApplicationError):
     status_code = status.HTTP_403_FORBIDDEN
     code = "auth.inactive_user"
@@ -63,6 +69,12 @@ class AuthInvalidSessionError(ApplicationError):
     status_code = status.HTTP_401_UNAUTHORIZED
     code = "auth.invalid_session"
     message = "Authentication session is invalid or expired."
+
+
+class AuthInvalidPasswordResetTokenError(ApplicationError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = "auth.invalid_password_reset_token"
+    message = "Password reset token is invalid or expired."
 
 
 class AuthPermissionDeniedError(ApplicationError):

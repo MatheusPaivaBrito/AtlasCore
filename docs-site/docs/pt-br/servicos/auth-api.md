@@ -15,6 +15,9 @@ Hoje o Auth já possui:
 - `access_token` e `refresh_token` com chaves separadas;
 - cookies HTTP-only para access/refresh token;
 - suporte a `Authorization: Bearer <token>`;
+- troca de senha autenticada;
+- recuperação de senha por token temporário em Redis;
+- rate limit simples para tentativas inválidas de login;
 - sessões em Redis com namespace `auth`;
 - limite de dispositivos por usuário;
 - `token_version` para revogar sessões/tokens antigos;
@@ -256,6 +259,8 @@ Chaves:
 | --- | --- |
 | `auth:{user_id}:session:{session_id}` | Sessão ativa com refresh token, user agent, IP e `token_version`. |
 | `auth:{user_id}:sessions` | Lista ordenada de sessões do usuário para aplicar limite de dispositivos. |
+| `auth:password_reset:{token_hash}` | Token temporário de recuperação de senha. |
+| `auth:login_attempt:{hash}` | Contador de falhas de login por e-mail/IP. |
 
 O serviço fica em:
 
@@ -383,6 +388,9 @@ users:write
 | `POST` | `/auth/refresh` | Rotacionar access/refresh token usando sessão ativa. |
 | `POST` | `/auth/logout` | Revogar sessão atual. |
 | `POST` | `/auth/logout-all` | Revogar todas as sessões do usuário. |
+| `POST` | `/auth/change-password` | Trocar senha do usuário autenticado e revogar sessões. |
+| `POST` | `/auth/password-recovery/request` | Criar token temporário de recuperação quando o usuário existir e estiver ativo. |
+| `POST` | `/auth/password-recovery/confirm` | Consumir token temporário e definir nova senha. |
 
 ### Users
 
@@ -424,6 +432,18 @@ make migrate-auth
 make seed-auth
 make dev-auth
 ```
+
+## Configurações de segurança
+
+```text
+AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS=900
+AUTH_EXPOSE_PASSWORD_RESET_TOKEN=0
+AUTH_LOGIN_MAX_ATTEMPTS=5
+AUTH_LOGIN_WINDOW_SECONDS=900
+AUTH_LOGIN_BLOCK_SECONDS=900
+```
+
+`AUTH_EXPOSE_PASSWORD_RESET_TOKEN` deve ficar desativado fora de desenvolvimento. Ele existe para testes locais enquanto `notification_api` ainda não entrega e-mails.
 
 ## Seed
 

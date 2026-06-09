@@ -6,10 +6,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
 from auth_api.infrastructure.database.connection import get_session
+from auth_api.infrastructure.settings import settings
 from auth_api.modules.access_control.application.permissions import serialize_user_permissions, user_has_permission
 from auth_api.modules.auth.application.cookies import REFRESH_TOKEN_COOKIE, clear_auth_cookies, set_auth_cookies
 from auth_api.modules.auth.application.guards import auth_guard, bearer_scheme
-from auth_api.modules.auth.application.passwords import verify_password
+from auth_api.modules.auth.application.login_attempts import LoginAttemptService
+from auth_api.modules.auth.application.password_recovery import PasswordRecoveryService
+from auth_api.modules.auth.application.passwords import hash_password, verify_password
 from auth_api.modules.auth.application.service_auth import InternalService, internal_service_guard
 from auth_api.modules.auth.application.tokens import jwt_service
 from auth_api.modules.auth.presentation.schemas import (
@@ -19,6 +22,12 @@ from auth_api.modules.auth.presentation.schemas import (
     LoginRequest,
     LoginResponse,
     LogoutResponse,
+    PasswordChangeRequest,
+    PasswordChangeResponse,
+    PasswordRecoveryRequest,
+    PasswordRecoveryResponse,
+    PasswordResetConfirmRequest,
+    PasswordResetConfirmResponse,
     RefreshResponse,
 )
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
@@ -27,6 +36,7 @@ from auth_api.shared.exceptions import (
     AuthExpiredTokenError,
     AuthInactiveUserError,
     AuthInvalidCredentialsError,
+    AuthInvalidPasswordResetTokenError,
     AuthInvalidSessionError,
     AuthInvalidTokenError,
 )
@@ -34,6 +44,12 @@ from shared_kernel.time import DateTimeService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 internal_router = APIRouter(prefix="/internal/auth", tags=["internal-auth"])
+
+
+def _set_user_password(user: UserEntity, new_password: str) -> None:
+    user.credential.password_hash = hash_password(new_password)
+    user.credential.password_updated_at = DateTimeService.utc_now()
+    user.token_version += 1
 
 
 @router.post("/login", response_model=LoginResponse, summary="Login with email and password")
@@ -44,6 +60,11 @@ def login(
     session: Session = Depends(get_session),
     session_service: SessionService = Depends(get_session_service),
 ) -> LoginResponse:
+    user_agent = request.headers.get("user-agent")
+    ip = request.client.host if request.client else None
+    attempts = LoginAttemptService(session_service.store)
+    attempts.ensure_not_blocked(email=payload.email, ip=ip)
+
     user = session.scalar(
         select(UserEntity)
         .options(selectinload(UserEntity.credential), selectinload(UserEntity.permissions))
@@ -52,16 +73,17 @@ def login(
     )
 
     if user is None or user.deleted_at is not None or user.credential is None:
+        attempts.record_failure(email=payload.email, ip=ip)
         raise AuthInvalidCredentialsError()
 
     if not verify_password(payload.password, user.credential.password_hash):
+        attempts.record_failure(email=payload.email, ip=ip)
         raise AuthInvalidCredentialsError()
 
     if not user.is_active:
         raise AuthInactiveUserError()
 
-    user_agent = request.headers.get("user-agent")
-    ip = request.client.host if request.client else None
+    attempts.clear(email=payload.email, ip=ip)
     session_id = session_service.generate_device_id(user_id=user.id, user_agent=user_agent, ip=ip)
     access_token = jwt_service.create_access_token(user=user, session_id=session_id)
     refresh_token = jwt_service.create_refresh_token(user=user, session_id=session_id)
@@ -88,6 +110,85 @@ def login(
         session_id=session_id,
         permissions=serialize_user_permissions(user),
     )
+
+
+@router.post(
+    "/change-password",
+    response_model=PasswordChangeResponse,
+    summary="Change current user password",
+)
+def change_password(
+    payload: PasswordChangeRequest,
+    response: Response,
+    current_user: UserEntity = auth_guard.require_user(),
+    session: Session = Depends(get_session),
+    session_service: SessionService = Depends(get_session_service),
+) -> PasswordChangeResponse:
+    if current_user.credential is None or not verify_password(
+        payload.current_password,
+        current_user.credential.password_hash,
+    ):
+        raise AuthInvalidCredentialsError()
+
+    _set_user_password(current_user, payload.new_password)
+    session.flush()
+    session_service.delete_all_sessions(user_id=current_user.id)
+    clear_auth_cookies(response=response)
+    return PasswordChangeResponse()
+
+
+@router.post(
+    "/password-recovery/request",
+    response_model=PasswordRecoveryResponse,
+    summary="Request password recovery",
+)
+def request_password_recovery(
+    payload: PasswordRecoveryRequest,
+    session: Session = Depends(get_session),
+    session_service: SessionService = Depends(get_session_service),
+) -> PasswordRecoveryResponse:
+    user = session.scalar(
+        select(UserEntity)
+        .options(selectinload(UserEntity.credential))
+        .where(UserEntity.email == payload.email)
+        .limit(1)
+    )
+
+    reset_token = None
+    if user is not None and user.deleted_at is None and user.is_active and user.credential is not None:
+        token = PasswordRecoveryService(session_service.store).create_reset_token(user=user)
+        if settings.AUTH_EXPOSE_PASSWORD_RESET_TOKEN:
+            reset_token = token
+
+    return PasswordRecoveryResponse(reset_token=reset_token)
+
+
+@router.post(
+    "/password-recovery/confirm",
+    response_model=PasswordResetConfirmResponse,
+    summary="Confirm password recovery with reset token",
+)
+def confirm_password_recovery(
+    payload: PasswordResetConfirmRequest,
+    response: Response,
+    session: Session = Depends(get_session),
+    session_service: SessionService = Depends(get_session_service),
+) -> PasswordResetConfirmResponse:
+    user_id = PasswordRecoveryService(session_service.store).consume_reset_token(token=payload.reset_token)
+    user = session.scalar(
+        select(UserEntity)
+        .options(selectinload(UserEntity.credential))
+        .where(UserEntity.id == user_id)
+        .limit(1)
+    )
+    if user is None or user.deleted_at is not None or not user.is_active or user.credential is None:
+        raise AuthInvalidPasswordResetTokenError()
+
+    _set_user_password(user, payload.new_password)
+    session.flush()
+    session_service.delete_all_sessions(user_id=user.id)
+    clear_auth_cookies(response=response)
+    return PasswordResetConfirmResponse()
 
 
 @router.post("/refresh", response_model=RefreshResponse, summary="Refresh access and refresh tokens")

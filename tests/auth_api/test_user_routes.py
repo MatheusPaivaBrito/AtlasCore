@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 from auth_api.infrastructure.database.base import Base
 from auth_api.infrastructure.database.connection import get_session
 from auth_api.main import app
+from auth_api.modules.auth.presentation import routes as auth_routes
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
 from auth_api.modules.sessions.application.stores import InMemorySessionStore
 
@@ -168,6 +169,29 @@ async def test_auth_user_crud_restore_and_login(auth_database: None) -> None:
         assert denied_introspection_response.status_code == 200
         assert denied_introspection_response.json()["allowed"] is False
 
+        change_password_response = await client.post(
+            "/auth/change-password",
+            headers=user_headers,
+            json={
+                "current_password": "AtlasUser456!",
+                "new_password": "AtlasUser789!",
+            },
+        )
+        assert change_password_response.status_code == 200
+        assert change_password_response.json()["changed"] is True
+
+        old_password_response = await client.post(
+            "/auth/login",
+            json={"email": "user@atlas.local", "password": "AtlasUser456!"},
+        )
+        assert old_password_response.status_code == 401
+
+        new_password_response = await client.post(
+            "/auth/login",
+            json={"email": "user@atlas.local", "password": "AtlasUser789!"},
+        )
+        assert new_password_response.status_code == 200
+
         delete_response = await client.delete(f"/users/{user_id}", headers=auth_headers)
         assert delete_response.status_code == 204
 
@@ -204,6 +228,91 @@ async def test_auth_login_rejects_invalid_credentials(auth_database: None) -> No
 
     assert response.status_code == 401
     assert response.json()["error"]["code"] == "auth.invalid_credentials"
+
+
+@pytest.mark.asyncio
+async def test_auth_password_recovery_resets_password(
+    auth_database: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(auth_routes.settings, "AUTH_EXPOSE_PASSWORD_RESET_TOKEN", True)
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post(
+            "/users",
+            json={
+                "email": "user@atlas.local",
+                "full_name": "Atlas User",
+                "password": "AtlasUser123!",
+            },
+        )
+
+        recovery_response = await client.post(
+            "/auth/password-recovery/request",
+            json={"email": "user@atlas.local"},
+        )
+        assert recovery_response.status_code == 200
+        reset_token = recovery_response.json()["reset_token"]
+        assert reset_token
+
+        confirm_response = await client.post(
+            "/auth/password-recovery/confirm",
+            json={
+                "reset_token": reset_token,
+                "new_password": "AtlasUser456!",
+            },
+        )
+        assert confirm_response.status_code == 200
+
+        old_login_response = await client.post(
+            "/auth/login",
+            json={"email": "user@atlas.local", "password": "AtlasUser123!"},
+        )
+        new_login_response = await client.post(
+            "/auth/login",
+            json={"email": "user@atlas.local", "password": "AtlasUser456!"},
+        )
+
+    assert old_login_response.status_code == 401
+    assert new_login_response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_auth_login_blocks_after_too_many_failed_attempts(
+    auth_database: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(auth_routes.settings, "AUTH_LOGIN_MAX_ATTEMPTS", 2)
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post(
+            "/users",
+            json={
+                "email": "user@atlas.local",
+                "full_name": "Atlas User",
+                "password": "AtlasUser123!",
+            },
+        )
+
+        first_response = await client.post(
+            "/auth/login",
+            json={"email": "user@atlas.local", "password": "WrongPassword123!"},
+        )
+        second_response = await client.post(
+            "/auth/login",
+            json={"email": "user@atlas.local", "password": "WrongPassword123!"},
+        )
+        blocked_response = await client.post(
+            "/auth/login",
+            json={"email": "user@atlas.local", "password": "AtlasUser123!"},
+        )
+
+    assert first_response.status_code == 401
+    assert second_response.status_code == 401
+    assert blocked_response.status_code == 429
+    assert blocked_response.json()["error"]["code"] == "auth.too_many_login_attempts"
 
 
 @pytest.mark.asyncio
@@ -253,6 +362,9 @@ def test_auth_user_routes_are_registered() -> None:
     assert "/auth/refresh" in paths
     assert "/auth/logout" in paths
     assert "/auth/logout-all" in paths
+    assert "/auth/change-password" in paths
+    assert "/auth/password-recovery/request" in paths
+    assert "/auth/password-recovery/confirm" in paths
     assert "/internal/auth/introspect" in paths
     assert "/sessions/me" in paths
     assert "/access-control/me" in paths

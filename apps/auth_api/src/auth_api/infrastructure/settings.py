@@ -103,6 +103,26 @@ class AuthSettings(BaseSettings):
         default=3600,
         validation_alias=AliasChoices("AUTH_PERMISSIONS_TTL_SECONDS", "USER_REDIS_TTL"),
     )
+    AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS: int = Field(
+        default=900,
+        validation_alias=AliasChoices("AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS", "PASSWORD_RESET_TOKEN_TTL_SECONDS"),
+    )
+    AUTH_EXPOSE_PASSWORD_RESET_TOKEN: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("AUTH_EXPOSE_PASSWORD_RESET_TOKEN", "EXPOSE_PASSWORD_RESET_TOKEN"),
+    )
+    AUTH_LOGIN_MAX_ATTEMPTS: int = Field(
+        default=5,
+        validation_alias=AliasChoices("AUTH_LOGIN_MAX_ATTEMPTS", "LOGIN_MAX_ATTEMPTS"),
+    )
+    AUTH_LOGIN_WINDOW_SECONDS: int = Field(
+        default=900,
+        validation_alias=AliasChoices("AUTH_LOGIN_WINDOW_SECONDS", "LOGIN_WINDOW_SECONDS"),
+    )
+    AUTH_LOGIN_BLOCK_SECONDS: int = Field(
+        default=900,
+        validation_alias=AliasChoices("AUTH_LOGIN_BLOCK_SECONDS", "LOGIN_BLOCK_SECONDS"),
+    )
 
     @property
     def AUTH_SESSION_TTL_SECONDS(self) -> int:

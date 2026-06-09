@@ -15,6 +15,9 @@ Auth currently has:
 - `access_token` and `refresh_token` with separate secrets;
 - HTTP-only cookies for access/refresh tokens;
 - `Authorization: Bearer <token>` support;
+- authenticated password changes;
+- temporary Redis-backed password recovery tokens;
+- simple rate limiting for invalid login attempts;
 - Redis sessions under the `auth` namespace;
 - per-user device limits;
 - `token_version` for revoking old tokens and sessions;
@@ -256,6 +259,8 @@ Keys:
 | --- | --- |
 | `auth:{user_id}:session:{session_id}` | Active session with refresh token, user agent, IP and `token_version`. |
 | `auth:{user_id}:sessions` | Ordered list of user sessions used to enforce device limits. |
+| `auth:password_reset:{token_hash}` | Temporary password recovery token. |
+| `auth:login_attempt:{hash}` | Failed login counter per e-mail/IP. |
 
 The service lives in:
 
@@ -383,6 +388,9 @@ users:write
 | `POST` | `/auth/refresh` | Rotate access/refresh tokens through an active session. |
 | `POST` | `/auth/logout` | Revoke the current session. |
 | `POST` | `/auth/logout-all` | Revoke every session for the current user. |
+| `POST` | `/auth/change-password` | Change the authenticated user's password and revoke sessions. |
+| `POST` | `/auth/password-recovery/request` | Create a temporary recovery token when the user exists and is active. |
+| `POST` | `/auth/password-recovery/confirm` | Consume a temporary token and set a new password. |
 
 ### Users
 
@@ -424,6 +432,18 @@ make migrate-auth
 make seed-auth
 make dev-auth
 ```
+
+## Security Settings
+
+```text
+AUTH_PASSWORD_RESET_TOKEN_TTL_SECONDS=900
+AUTH_EXPOSE_PASSWORD_RESET_TOKEN=0
+AUTH_LOGIN_MAX_ATTEMPTS=5
+AUTH_LOGIN_WINDOW_SECONDS=900
+AUTH_LOGIN_BLOCK_SECONDS=900
+```
+
+`AUTH_EXPOSE_PASSWORD_RESET_TOKEN` must stay disabled outside development. It exists for local tests while `notification_api` is not sending e-mails yet.
 
 ## Seed
 

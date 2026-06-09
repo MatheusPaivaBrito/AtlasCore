@@ -37,6 +37,38 @@ class LogoutResponse(BaseModel):
     logged_out: bool = True
 
 
+class PasswordChangeRequest(BaseModel):
+    current_password: str = Field(min_length=8, max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class PasswordChangeResponse(BaseModel):
+    changed: bool = True
+
+
+class PasswordRecoveryRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=180)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+
+class PasswordRecoveryResponse(BaseModel):
+    accepted: bool = True
+    reset_token: str | None = None
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    reset_token: str = Field(min_length=20, max_length=256)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class PasswordResetConfirmResponse(BaseModel):
+    reset: bool = True
+
+
 class IntrospectionRequest(BaseModel):
     required_permission: PermissionPayload | None = Field(
         default=None,
