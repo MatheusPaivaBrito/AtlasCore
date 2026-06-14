@@ -237,6 +237,23 @@ async def test_auth_login_rejects_invalid_credentials(auth_database: None) -> No
 
 
 @pytest.mark.asyncio
+async def test_auth_password_policy_is_public(auth_database: None) -> None:
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/auth/password-policy")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "min_length": 10,
+        "require_uppercase": True,
+        "require_lowercase": True,
+        "require_number": True,
+        "require_special": True,
+    }
+
+
+@pytest.mark.asyncio
 async def test_auth_rejects_weak_password(auth_database: None) -> None:
     transport = ASGITransport(app=app)
 
@@ -392,6 +409,7 @@ def test_auth_user_routes_are_registered() -> None:
     assert "/auth/refresh" in paths
     assert "/auth/logout" in paths
     assert "/auth/logout-all" in paths
+    assert "/auth/password-policy" in paths
     assert "/auth/change-password" in paths
     assert "/auth/password-recovery/request" in paths
     assert "/auth/password-recovery/confirm" in paths

@@ -8,6 +8,16 @@ from auth_api.shared.exceptions import AuthWeakPasswordError
 
 class PasswordPolicy:
     @staticmethod
+    def describe() -> dict[str, bool | int]:
+        return {
+            "min_length": settings.AUTH_PASSWORD_MIN_LENGTH,
+            "require_uppercase": settings.AUTH_PASSWORD_REQUIRE_UPPERCASE,
+            "require_lowercase": settings.AUTH_PASSWORD_REQUIRE_LOWERCASE,
+            "require_number": settings.AUTH_PASSWORD_REQUIRE_NUMBER,
+            "require_special": settings.AUTH_PASSWORD_REQUIRE_SPECIAL,
+        }
+
+    @staticmethod
     def validate(password: str) -> None:
         missing_requirements: list[str] = []
 

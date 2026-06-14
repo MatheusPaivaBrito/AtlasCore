@@ -25,6 +25,7 @@ from auth_api.modules.auth.presentation.schemas import (
     LogoutResponse,
     PasswordChangeRequest,
     PasswordChangeResponse,
+    PasswordPolicyResponse,
     PasswordRecoveryRequest,
     PasswordRecoveryResponse,
     PasswordResetConfirmRequest,
@@ -112,6 +113,15 @@ def login(
         session_id=session_id,
         permissions=serialize_user_permissions(user),
     )
+
+
+@router.get(
+    "/password-policy",
+    response_model=PasswordPolicyResponse,
+    summary="Get current password policy",
+)
+def get_password_policy() -> PasswordPolicyResponse:
+    return PasswordPolicyResponse(**password_policy.describe())
 
 
 @router.post(

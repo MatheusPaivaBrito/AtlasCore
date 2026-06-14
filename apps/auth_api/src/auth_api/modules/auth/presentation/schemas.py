@@ -37,6 +37,14 @@ class LogoutResponse(BaseModel):
     logged_out: bool = True
 
 
+class PasswordPolicyResponse(BaseModel):
+    min_length: int
+    require_uppercase: bool
+    require_lowercase: bool
+    require_number: bool
+    require_special: bool
+
+
 class PasswordChangeRequest(BaseModel):
     current_password: str = Field(min_length=8, max_length=128)
     new_password: str = Field(min_length=8, max_length=128)
