@@ -6,7 +6,12 @@ from urllib.request import Request, urlopen
 
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
+from redis import Redis
+from redis.exceptions import RedisError
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 
+from core_api.infrastructure.database.connection import engine
 from core_api.infrastructure.settings import settings
 
 
@@ -20,19 +25,57 @@ async def health_check() -> dict[str, str]:
 
 @router.get("/ready")
 def readiness_check() -> JSONResponse:
-    auth_api = check_auth_api_readiness()
-    is_ready = auth_api["status"] == "ok"
+    dependencies = {
+        "postgres": check_postgres_readiness(),
+        "redis": check_redis_readiness(),
+        "auth_api": check_auth_api_readiness(),
+    }
+    is_ready = all(dependency["status"] == "ok" for dependency in dependencies.values())
     payload = {
         "status": "ready" if is_ready else "not_ready",
-        "dependencies": {
-            "auth_api": auth_api,
-        },
+        "dependencies": dependencies,
     }
 
     return JSONResponse(
         status_code=status.HTTP_200_OK if is_ready else status.HTTP_503_SERVICE_UNAVAILABLE,
         content=payload,
     )
+
+
+def check_postgres_readiness() -> dict[str, Any]:
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("select 1"))
+    except (OSError, SQLAlchemyError) as exc:
+        return {
+            "status": "unavailable",
+            "error": exc.__class__.__name__,
+        }
+
+    return {"status": "ok"}
+
+
+def check_redis_readiness() -> dict[str, Any]:
+    try:
+        redis_client = Redis.from_url(
+            settings.REDIS_URL,
+            socket_timeout=settings.REDIS_SOCKET_TIMEOUT_SECONDS,
+            socket_connect_timeout=settings.REDIS_SOCKET_TIMEOUT_SECONDS,
+        )
+        is_alive = redis_client.ping()
+    except (OSError, RedisError, TimeoutError) as exc:
+        return {
+            "status": "unavailable",
+            "error": exc.__class__.__name__,
+        }
+
+    if is_alive:
+        return {"status": "ok"}
+
+    return {
+        "status": "unavailable",
+        "error": "RedisPingFailed",
+    }
 
 
 def check_auth_api_readiness() -> dict[str, Any]:

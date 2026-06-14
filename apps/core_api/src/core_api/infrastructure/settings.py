@@ -55,6 +55,10 @@ class CoreSettings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_DB: int = Field(default=1, validation_alias=AliasChoices("CORE_REDIS_DB", "REDIS_DB"))
     REDIS_KEY_PREFIX: str = Field(default="core", validation_alias=AliasChoices("CORE_REDIS_KEY_PREFIX", "REDIS_KEY_PREFIX"))
+    REDIS_SOCKET_TIMEOUT_SECONDS: float = Field(
+        default=1.0,
+        validation_alias=AliasChoices("CORE_REDIS_SOCKET_TIMEOUT_SECONDS", "REDIS_SOCKET_TIMEOUT_SECONDS"),
+    )
     REDIS_URL_OVERRIDE: str | None = Field(
         default=None,
         validation_alias=AliasChoices("CORE_REDIS_URL", "REDIS_URL", "REDIS_URL_OVERRIDE"),
