@@ -10,7 +10,10 @@ This prevents treating JWTs as permanent passwords. The token proves identity fo
 | --- | --- | --- |
 | User | Postgres `atlas_auth.auth_users` | Identity and account state. |
 | Credential | Postgres `atlas_auth.auth_user_credentials` | Bcrypt password hash. |
-| Permission | Postgres `atlas_auth.auth_user_permissions` | Authorization using `domain:action`. |
+| Direct permission | Postgres `atlas_auth.auth_user_permissions` | Authorization assigned directly to a user using `domain:action`. |
+| Role | Postgres `atlas_auth.auth_roles` | Reusable permission group. |
+| Role permission | Postgres `atlas_auth.auth_role_permissions` | Permissions inherited by every user assigned to the role. |
+| User role | Postgres `atlas_auth.auth_user_roles` | Relationship between identities and roles. |
 | Session | Redis | Runtime state for the logged-in device. |
 | Access token | JWT | Short-lived authentication proof. |
 | Refresh token | JWT + Redis | Renewal controlled by an active session. |
@@ -83,7 +86,7 @@ auth:{user_id}:sessions
 
 ## RBAC
 
-AtlasCore starts with simple RBAC:
+AtlasCore uses a simple and expandable RBAC base:
 
 ```text
 domain:action
@@ -97,11 +100,50 @@ users:write
 users:delete
 access_control:read
 access_control:write
+roles:read
+roles:write
 ```
 
-The `auth_user_permissions` table stores permissions per user.
+Effective user permissions are calculated from:
 
-`is_superuser=True` works as an administrative bypass.
+- direct permissions in `auth_user_permissions`;
+- role-inherited permissions in `auth_role_permissions`;
+- administrative bypass when `is_superuser=True`.
+
+This allows AtlasCore to start simple with direct user permissions and grow into reusable profiles such as `admin`, `librarian` or `viewer`.
+
+## Roles
+
+Roles live in:
+
+```text
+apps/auth_api/src/auth_api/modules/roles/
+```
+
+This module contains:
+
+- `Role` entity;
+- `RolePermission` entity;
+- `UserRole` entity;
+- commands, queries and handlers;
+- administrative `/roles` router;
+- routes to read and replace a user's roles at `/access-control/users/{user_id}/roles`.
+
+Roles do not replace direct permissions. They reduce repetition when many users need the same permission bundle.
+
+## Permission Catalog
+
+The typed permission catalog lives in:
+
+```text
+apps/auth_api/src/auth_api/modules/access_control/application/permissions.py
+```
+
+It avoids raw strings scattered across routes and exposes an official list for administrative clients through:
+
+```text
+GET /access-control/permissions/catalog
+```
 
 ## Guards
 
@@ -126,7 +168,8 @@ Guard flow:
 4. load user from Postgres;
 5. reject inactive or deleted users;
 6. compare `token_version`;
-7. check permission when required by the route.
+7. compute effective permissions;
+8. check permission when required by the route.
 
 ## Current Integration State
 
@@ -137,6 +180,6 @@ In Core, the current rule is:
 - query routes stay public for catalog reads;
 - command routes call Auth through internal introspection;
 - Core sends internal service credentials;
-- Auth validates the calling service, token, Redis session, user, `token_version` and `domain:action` permission.
+- Auth validates the calling service, token, Redis session, user, `token_version`, roles and `domain:action` permission.
 
 The full Auth/Core contract is documented in [Auth/Core Contract](auth-core-contract.md).

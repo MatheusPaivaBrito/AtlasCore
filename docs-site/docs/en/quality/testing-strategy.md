@@ -25,9 +25,11 @@ Per-service tests keep boundaries visible. Integration tests verify contracts sh
 - Shared CORS contract across APIs.
 - Auth API user CRUD, login and protected routes.
 - Auth API docs UI and home page.
+- Auth/Core contract schemas and introspection contract.
 - `core_api` metadata registration for the `library` and `public_assets` SQLAlchemy models.
 - `core_api` custom docs and landing page.
 - `core_api` Auth guard behavior.
+- Alembic migration checks for Core and Auth.
 - `core_api` settings URL derivation and overrides.
 - `core_api` platform discovery URL/port derivation.
 - `core_api` shared error contract responses.
@@ -37,6 +39,15 @@ Per-service tests keep boundaries visible. Integration tests verify contracts sh
 - `shared_kernel.errors` structured error primitives.
 - `shared_kernel.http.crud` route factory contracts.
 - Shared 404 error contract across all APIs.
+
+## CI
+
+GitHub Actions runs:
+
+- Ruff;
+- Pytest;
+- Docker image builds for all five APIs through `make build-apis`;
+- PT-BR and EN MkDocs builds with `--strict`.
 
 ## Technical Note
 

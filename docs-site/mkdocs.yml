@@ -46,17 +46,21 @@ markdown_extensions:
 
 nav:
   - Home: index.md
+  - Estado Atual: estado-atual.md
   - Guia do Repositório:
       - Mapa do Projeto: repositorio/mapa-do-projeto.md
       - Anatomia de uma API: repositorio/anatomia-api.md
       - Anatomia de Módulo: repositorio/anatomia-modulo.md
       - Shared Kernel: repositorio/shared-kernel.md
+      - Toolbox: repositorio/toolbox.md
   - Arquitetura:
       - Visão Arquitetural: arquitetura/visao-geral.md
       - Catálogo de Serviços: arquitetura/catalogo-servicos.md
       - Fronteiras: arquitetura/fronteiras.md
+      - Segurança e RBAC: arquitetura/seguranca-rbac.md
       - Contrato Auth/Core: arquitetura/contrato-auth-core.md
       - DDD e Clean Architecture: arquitetura/ddd-clean-architecture.md
+      - Tratamento de Erros: arquitetura/tratamento-erros.md
   - Serviços:
       - Auth API: servicos/auth-api.md
       - Core API: servicos/core-api.md

@@ -46,7 +46,7 @@ Flow:
 2. The guard extracts the access token from the `access_token` cookie or the `Authorization` header.
 3. Core builds the required permission, for example `books:write`.
 4. Core calls Auth internal introspection.
-5. Auth validates JWT, Redis session, user, `token_version` and permission.
+5. Auth validates JWT, Redis session, user, `token_version` and effective permission.
 6. Auth answers whether the action is allowed.
 7. Core executes or rejects the command.
 
@@ -112,6 +112,14 @@ The catalog exposes typed objects to:
 - document what each API requires;
 - enable automated validation later.
 
+The administrative catalog endpoint is:
+
+```text
+GET /access-control/permissions/catalog
+```
+
+Effective permissions may come directly from the user or be inherited through a role. For Core, that is an Auth implementation detail: Core asks for `books:write`, and Auth decides whether the user has that capability.
+
 ## Service-to-Service Authentication
 
 AtlasCore uses one internal API key per service on Auth internal routes:
@@ -156,8 +164,9 @@ The rule is not to create files for aesthetics. The rule is to keep everything a
 ## Implemented State
 
 - `auth_api` has a typed permission catalog.
+- `auth_api` has roles, role permissions and user-role relationships.
 - The Auth seed uses the catalog.
 - `auth_api/modules/users` is verticalized.
 - `/internal/auth/introspect` requires service credentials.
 - `core_api` sends `X-Atlas-Service` and `X-Atlas-Service-Key`.
-- Tests cover authorized users, denied permissions and calling-service authentication.
+- Tests cover the introspection contract, JSON schemas, authorized users, denied permissions and calling-service authentication.

@@ -21,8 +21,13 @@ Hoje o Auth já possui:
 - sessões em Redis com namespace `auth`;
 - limite de dispositivos por usuário;
 - `token_version` para revogar sessões/tokens antigos;
-- tabela de permissões por usuário;
+- permissões diretas por usuário;
+- roles reutilizáveis;
+- permissões herdadas por role;
+- relação usuário-role;
 - catálogo tipado de permissões em código;
+- endpoint para listar o catálogo de permissões;
+- endpoints administrativos para roles;
 - guards FastAPI para usuário autenticado e permissão específica;
 - autenticação service-to-service para rotas internas;
 - seed idempotente com usuários e permissões de demo.
@@ -41,7 +46,10 @@ Tabelas atuais:
 | --- | --- |
 | `auth_users` | Perfil de identidade, status, soft delete, `token_version` e metadados de último login. |
 | `auth_user_credentials` | Hash bcrypt da senha separado da leitura normal de usuário. |
-| `auth_user_permissions` | Permissões RBAC por usuário no formato `domain:action`. |
+| `auth_user_permissions` | Permissões diretas por usuário no formato `domain:action`. |
+| `auth_roles` | Perfis reutilizáveis de acesso. |
+| `auth_role_permissions` | Permissões herdadas por usuários vinculados a uma role. |
+| `auth_user_roles` | Relação entre usuários e roles. |
 | `alembic_version` | Controle de versão do schema do Auth. |
 
 Campos importantes de `auth_users`:
@@ -67,6 +75,7 @@ apps/auth_api/alembic.ini
 apps/auth_api/alembic/env.py
 apps/auth_api/alembic/versions/20260607_0001_auth_schema.py
 apps/auth_api/alembic/versions/20260607_0002_auth_rbac_sessions.py
+apps/auth_api/alembic/versions/20260607_0003_auth_roles.py
 ```
 
 Comando:
@@ -75,7 +84,7 @@ Comando:
 make migrate-auth
 ```
 
-A migração `0001` cria usuários e credenciais. A migração `0002` adiciona metadados de login e permissões RBAC.
+A migração `0001` cria usuários e credenciais. A migração `0002` adiciona metadados de login e permissões diretas. A migração `0003` adiciona roles, permissões por role e relação usuário-role.
 
 ## Módulos
 
@@ -85,6 +94,7 @@ modules/
   auth/
   sessions/
   access_control/
+  roles/
 ```
 
 | Módulo | Papel |
@@ -92,7 +102,8 @@ modules/
 | `users` | CRUD de usuários, hash inicial de senha, soft delete e restore. |
 | `auth` | Login, refresh, logout, JWT, cookies e guards. |
 | `sessions` | Sessões em Redis, device id e limite de dispositivos. |
-| `access_control` | Permissões `domain:action`, sincronização e consulta de perfil de acesso. |
+| `access_control` | Permissões `domain:action`, catálogo, permissões efetivas e consulta de perfil de acesso. |
+| `roles` | CRUD administrativo de roles, permissões por role e associação usuário-role. |
 
 ## Estrutura de arquivos importante
 
@@ -127,6 +138,14 @@ apps/auth_api/src/auth_api/
       presentation/
         routes.py
         schemas.py
+    roles/
+      role_commands.py
+      role_command_handlers.py
+      role_entity.py
+      role_queries.py
+      role_query_handlers.py
+      role_router.py
+      role_schema.py
     users/
       user_commands.py
       user_command_handlers.py
@@ -154,7 +173,9 @@ modules/users/
 
 Isso deixa entidade, schemas, router, commands, queries e handlers do mesmo recurso juntos.
 
-`sessions`, `access_control` e `auth` tambem podem seguir esse padrão quando crescerem, mas nao devem ganhar arquivos vazios so por simetria.
+`roles` tambem segue o padrão vertical usado na Core.
+
+`sessions`, `access_control` e `auth` podem seguir esse padrão quando crescerem, mas nao devem ganhar arquivos vazios so por simetria.
 
 ## Fluxo de login
 
@@ -317,6 +338,9 @@ access_control:read
 access_control:write
 sessions:read
 sessions:delete
+roles:read
+roles:write
+roles:delete
 ```
 
 O guard usa:
@@ -328,10 +352,16 @@ auth_guard.require_permission(domain="users", action="write")
 Regra:
 
 - `is_superuser=True` passa por qualquer permissão;
-- usuários comuns precisam ter a permissão exata;
+- usuários comuns precisam ter a permissão exata diretamente ou herdada por role;
 - usuário inativo não passa nem com token válido;
 - token com sessão ausente no Redis é recusado;
 - divergência de `token_version` revoga a sessão.
+
+As permissões efetivas de um usuário são a união entre:
+
+- permissões diretas em `auth_user_permissions`;
+- permissões herdadas pelas roles vinculadas em `auth_user_roles`;
+- permissões cadastradas em `auth_role_permissions`.
 
 ## Catálogo de permissões
 
@@ -353,6 +383,9 @@ sessions:read
 sessions:delete
 access_control:read
 access_control:write
+roles:read
+roles:write
+roles:delete
 books:write
 books:delete
 ```
@@ -364,7 +397,25 @@ Benefícios:
 - ajuda a Core e o Auth a falarem a mesma linguagem;
 - facilita teste de contrato entre APIs.
 
-O seed usa esse catálogo para criar permissões administrativas e operacionais de livraria.
+O seed usa esse catálogo para criar roles e permissões administrativas e operacionais de livraria.
+
+## Roles
+
+Roles permitem reutilizar pacotes de permissões.
+
+Rotas principais:
+
+| Método | Path | Permissão | Objetivo |
+| --- | --- | --- | --- |
+| `POST` | `/roles` | `roles:write` | Criar role. |
+| `GET` | `/roles` | `roles:read` | Listar roles. |
+| `GET` | `/roles/{role_id}` | `roles:read` | Buscar uma role. |
+| `PATCH` | `/roles/{role_id}` | `roles:write` | Editar role. |
+| `DELETE` | `/roles/{role_id}` | `roles:delete` | Soft delete da role. |
+| `POST` | `/roles/{role_id}/restore` | `roles:write` | Restaurar role removida logicamente. |
+| `PUT` | `/roles/{role_id}/permissions` | `roles:write` | Substituir permissões da role. |
+| `GET` | `/access-control/users/{user_id}/roles` | `access_control:read` | Ver roles de um usuário. |
+| `PUT` | `/access-control/users/{user_id}/roles` | `access_control:write` | Substituir roles de um usuário. |
 
 ## Bootstrap do primeiro usuário
 
@@ -416,6 +467,7 @@ users:write
 | Método | Path | Permissão | Objetivo |
 | --- | --- | --- | --- |
 | `GET` | `/access-control/me` | Usuário autenticado | Ver perfil de acesso atual. |
+| `GET` | `/access-control/permissions/catalog` | `access_control:read` | Listar catálogo oficial de permissões. |
 | `GET` | `/access-control/users/{user_id}/permissions` | `access_control:read` | Ver permissões de outro usuário. |
 | `PUT` | `/access-control/users/{user_id}/permissions` | `access_control:write` | Substituir permissões de outro usuário. |
 
@@ -451,8 +503,8 @@ O seed cria ou atualiza:
 
 | E-mail | Senha | Estado | Permissões |
 | --- | --- | --- | --- |
-| `admin@atlas.local` | `AtlasAdmin123!` | Ativo, superuser | Permissões administrativas do Auth e commands do Core. |
-| `librarian@atlas.local` | `AtlasUser123!` | Ativo | Permissões operacionais de livraria. |
+| `admin@atlas.local` | `AtlasAdmin123!` | Ativo, superuser | Role administrativa, permissões administrativas do Auth e commands do Core. |
+| `librarian@atlas.local` | `AtlasUser123!` | Ativo | Role operacional de livraria e permissões de catálogo. |
 | `blocked@atlas.local` | `AtlasBlocked123!` | Inativo | Nenhuma. |
 
 O seed é idempotente. Ele pode ser rodado de novo sem duplicar usuários ou permissões.

@@ -46,7 +46,7 @@ Fluxo:
 2. O guard extrai o access token do cookie `access_token` ou do header `Authorization`.
 3. A Core monta a permissao exigida, por exemplo `books:write`.
 4. A Core chama a introspeccao interna do Auth.
-5. O Auth valida JWT, Redis session, usuario, `token_version` e permissao.
+5. O Auth valida JWT, Redis session, usuario, `token_version` e permissao efetiva.
 6. O Auth responde se a acao e permitida.
 7. A Core executa ou recusa a command.
 
@@ -112,6 +112,14 @@ Esse catalogo expoe objetos tipados para:
 - documentar o que cada API exige;
 - permitir validacao automatizada no futuro.
 
+O endpoint administrativo do catalogo e:
+
+```text
+GET /access-control/permissions/catalog
+```
+
+Permissoes efetivas podem vir direto do usuario ou herdadas por role. Para a Core, isso e detalhe interno do Auth: a Core pergunta por `books:write`, e o Auth decide se o usuario possui essa capacidade.
+
 ## Autenticacao entre servicos
 
 O AtlasCore usa uma API key interna por servico nas rotas internas do Auth:
@@ -156,8 +164,9 @@ A regra nao e criar arquivos por estetica. A regra e deixar tudo sobre um recurs
 ## Estado implementado
 
 - `auth_api` possui catalogo tipado de permissoes.
+- `auth_api` possui roles, permissoes por role e relacao usuario-role.
 - O seed do Auth usa o catalogo.
 - `auth_api/modules/users` esta verticalizado.
 - `/internal/auth/introspect` exige credencial de servico.
 - `core_api` envia `X-Atlas-Service` e `X-Atlas-Service-Key`.
-- Existem testes para usuario autorizado, permissao negada e servico chamador.
+- Existem testes para contrato de introspeccao, schemas JSON, usuario autorizado, permissao negada e servico chamador.

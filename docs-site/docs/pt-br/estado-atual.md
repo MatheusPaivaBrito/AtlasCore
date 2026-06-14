@@ -15,7 +15,8 @@ AtlasCore e um monorepo backend com:
 - Docker Compose para infraestrutura local;
 - Poetry para dependencias;
 - MkDocs em portugues e ingles;
-- testes por servico e contratos entre servicos.
+- testes por servico e contratos entre servicos;
+- GitHub Actions para lint, testes, build Docker e build da documentacao.
 
 ```text
 AtlasCore/
@@ -58,6 +59,7 @@ Os dois servicos de produto ja possuem fatias funcionais reais.
 - modulo `public_assets` para imagens/documentos publicos;
 - mixins SQLAlchemy de timestamp e soft delete vindos do `shared_kernel`;
 - settings separados entre configuracao de banco/cache da Core e descoberta da plataforma;
+- endpoint de readiness verificando Postgres, Redis e dependencia do Auth;
 - seeds no toolbox para popular dados mockados da livraria.
 
 `auth_api` possui:
@@ -74,8 +76,14 @@ Os dois servicos de produto ja possuem fatias funcionais reais.
 - refresh token rotacionado pela sessao ativa;
 - logout de sessao atual e logout global;
 - `token_version` para revogacao;
-- RBAC com tabela `auth_user_permissions`;
+- RBAC com permissoes diretas por usuario;
+- roles administrativas e operacionais;
+- relacao usuario-role;
+- permissoes herdadas por role;
+- catalogo de permissoes exposto pela API;
+- endpoints administrativos de roles;
 - guards FastAPI para usuario autenticado e permissao especifica;
+- introspeccao interna para autorizar chamadas da Core;
 - seed de usuarios demo com permissoes.
 
 ## Servicos
@@ -83,7 +91,7 @@ Os dois servicos de produto ja possuem fatias funcionais reais.
 | Runtime | Estado | Responsabilidade |
 | --- | --- | --- |
 | `core_api` | Primeiro slice funcional | API de negocio, dona do Postgres, CRUD de livraria e assets publicos. |
-| `auth_api` | API de identidade funcional | CRUD de usuarios, credenciais bcrypt, JWT access/refresh, sessoes Redis, RBAC e ownership do `atlas_auth`. |
+| `auth_api` | API de identidade funcional | CRUD de usuarios, credenciais bcrypt, JWT access/refresh, sessoes Redis, RBAC com roles/permissoes e ownership do `atlas_auth`. |
 | `eventing_api` | Fronteira preparada | Contratos Kafka, schemas, topicos, streams, outbox e projections. |
 | `notification_api` | Fronteira preparada | E-mail, Slack, templates, canais e tentativas de entrega. |
 | `observability_api` | Fronteira preparada | Incidentes, alertas, dashboards, consultas de logs e releases. |
@@ -206,6 +214,14 @@ A documentacao usa dois arquivos MkDocs:
 
 Isso deixa a navegacao de cada idioma limpa, em vez de misturar portugues e ingles em todas as paginas.
 
+O deploy publico usa:
+
+```bash
+poetry run mkdocs gh-deploy --force -f docs-site/mkdocs.yml
+```
+
+`docs-site/mkdocs.yml` aponta para a versao PT-BR principal publicada no GitHub Pages.
+
 ## Testes
 
 A suite cobre hoje:
@@ -226,6 +242,45 @@ A suite cobre hoje:
 - contrato de erro compartilhado.
 - settings de nome de servico por API;
 - fabrica CRUD compartilhada no `shared_kernel`.
+- schemas JSON dos contratos em `contracts/`;
+- migrations Alembic da Core e do Auth;
+- GitHub Actions executando Ruff, Pytest, build Docker das APIs e build MkDocs.
+
+## CI e Docker
+
+O workflow `.github/workflows/ci.yml` executa, em cada push e pull request para `main`:
+
+1. instala Python 3.14;
+2. instala Poetry 2.4.1;
+3. instala dependencias com o grupo `docs`;
+4. roda Ruff;
+5. roda a suite de testes;
+6. executa `make build-apis`;
+7. gera a documentacao PT-BR e EN com `--strict`.
+
+O alvo `make build-apis` chama:
+
+```bash
+docker compose --profile apis build
+```
+
+Esse profile constroi as imagens de:
+
+- `core-api`;
+- `auth-api`;
+- `eventing-api`;
+- `notification-api`;
+- `observability-api`.
+
+Comandos individuais tambem existem:
+
+```bash
+make build-core
+make build-auth
+make build-eventing
+make build-notifications
+make build-observability
+```
 
 ## Toolbox
 
@@ -258,5 +313,6 @@ Os proximos passos de implementacao deveriam ser:
 - expandir a estrategia de autorizacao entre backends alem do primeiro guard da Core;
 - adicionar cache Redis real no `core_api` quando houver comportamento que justifique;
 - ligar Kafka apenas quando houver comportamento real de evento/outbox;
+- reservar um dia proprio para revisar a documentacao com mais calma;
 - preencher settings especificos em cada API quando cada provider virar codigo real;
 - manter a documentacao atualizada sempre que um placeholder virar codigo.

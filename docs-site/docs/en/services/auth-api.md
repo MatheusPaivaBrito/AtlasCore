@@ -21,8 +21,13 @@ Auth currently has:
 - Redis sessions under the `auth` namespace;
 - per-user device limits;
 - `token_version` for revoking old tokens and sessions;
-- user-level permissions;
+- direct user-level permissions;
+- reusable roles;
+- role-inherited permissions;
+- user-role relationships;
 - a typed permission catalog in code;
+- an endpoint that lists the permission catalog;
+- administrative role endpoints;
 - FastAPI guards for authenticated users and explicit permissions;
 - service-to-service authentication for internal routes;
 - an idempotent seed with demo users and permissions.
@@ -41,7 +46,10 @@ Current tables:
 | --- | --- |
 | `auth_users` | Identity profile, status, soft delete, `token_version` and last-login metadata. |
 | `auth_user_credentials` | Bcrypt password hash separated from normal user reads. |
-| `auth_user_permissions` | User-level RBAC permissions using `domain:action`. |
+| `auth_user_permissions` | Direct user-level permissions using `domain:action`. |
+| `auth_roles` | Reusable access profiles. |
+| `auth_role_permissions` | Permissions inherited by users assigned to a role. |
+| `auth_user_roles` | Relationship between users and roles. |
 | `alembic_version` | Auth schema version tracking. |
 
 Important `auth_users` fields:
@@ -67,6 +75,7 @@ apps/auth_api/alembic.ini
 apps/auth_api/alembic/env.py
 apps/auth_api/alembic/versions/20260607_0001_auth_schema.py
 apps/auth_api/alembic/versions/20260607_0002_auth_rbac_sessions.py
+apps/auth_api/alembic/versions/20260607_0003_auth_roles.py
 ```
 
 Command:
@@ -75,7 +84,7 @@ Command:
 make migrate-auth
 ```
 
-Migration `0001` creates users and credentials. Migration `0002` adds login metadata and RBAC permissions.
+Migration `0001` creates users and credentials. Migration `0002` adds login metadata and direct permissions. Migration `0003` adds roles, role permissions and user-role relationships.
 
 ## Modules
 
@@ -85,6 +94,7 @@ modules/
   auth/
   sessions/
   access_control/
+  roles/
 ```
 
 | Module | Role |
@@ -92,7 +102,8 @@ modules/
 | `users` | User CRUD, initial password hashing, soft delete and restore. |
 | `auth` | Login, refresh, logout, JWT, cookies and guards. |
 | `sessions` | Redis sessions, device id and device limit enforcement. |
-| `access_control` | `domain:action` permissions, synchronization and access-profile reads. |
+| `access_control` | `domain:action` permissions, catalog, effective permissions and access-profile reads. |
+| `roles` | Administrative role CRUD, role permissions and user-role assignments. |
 
 ## Important File Structure
 
@@ -127,6 +138,14 @@ apps/auth_api/src/auth_api/
       presentation/
         routes.py
         schemas.py
+    roles/
+      role_commands.py
+      role_command_handlers.py
+      role_entity.py
+      role_queries.py
+      role_query_handlers.py
+      role_router.py
+      role_schema.py
     users/
       user_commands.py
       user_command_handlers.py
@@ -153,6 +172,8 @@ modules/users/
 ```
 
 This keeps entity, schemas, router, commands, queries and handlers for one resource together.
+
+`roles` also follows the vertical pattern used by Core.
 
 `sessions`, `access_control` and `auth` can follow the same pattern as they grow, but they should not gain empty files just for symmetry.
 
@@ -317,6 +338,9 @@ access_control:read
 access_control:write
 sessions:read
 sessions:delete
+roles:read
+roles:write
+roles:delete
 ```
 
 The guard uses:
@@ -328,10 +352,16 @@ auth_guard.require_permission(domain="users", action="write")
 Rules:
 
 - `is_superuser=True` bypasses every permission;
-- regular users need the exact permission;
+- regular users need the exact permission directly or inherited through a role;
 - inactive users are blocked even with a valid token;
 - tokens without a Redis session are rejected;
 - `token_version` mismatch revokes the session.
+
+Effective user permissions are the union of:
+
+- direct permissions in `auth_user_permissions`;
+- role assignments in `auth_user_roles`;
+- role permissions in `auth_role_permissions`.
 
 ## Permission Catalog
 
@@ -353,6 +383,9 @@ sessions:read
 sessions:delete
 access_control:read
 access_control:write
+roles:read
+roles:write
+roles:delete
 books:write
 books:delete
 ```
@@ -364,7 +397,25 @@ Benefits:
 - shared language between Core and Auth;
 - easier cross-API contract tests.
 
-The seed uses this catalog to create administrative and library-operator permissions.
+The seed uses this catalog to create roles plus administrative and library-operator permissions.
+
+## Roles
+
+Roles allow reusable permission bundles.
+
+Main routes:
+
+| Method | Path | Permission | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/roles` | `roles:write` | Create a role. |
+| `GET` | `/roles` | `roles:read` | List roles. |
+| `GET` | `/roles/{role_id}` | `roles:read` | Get one role. |
+| `PATCH` | `/roles/{role_id}` | `roles:write` | Update a role. |
+| `DELETE` | `/roles/{role_id}` | `roles:delete` | Soft-delete a role. |
+| `POST` | `/roles/{role_id}/restore` | `roles:write` | Restore a soft-deleted role. |
+| `PUT` | `/roles/{role_id}/permissions` | `roles:write` | Replace role permissions. |
+| `GET` | `/access-control/users/{user_id}/roles` | `access_control:read` | Read a user's roles. |
+| `PUT` | `/access-control/users/{user_id}/roles` | `access_control:write` | Replace a user's roles. |
 
 ## First User Bootstrap
 
@@ -416,6 +467,7 @@ users:write
 | Method | Path | Permission | Purpose |
 | --- | --- | --- | --- |
 | `GET` | `/access-control/me` | Authenticated user | Read current access profile. |
+| `GET` | `/access-control/permissions/catalog` | `access_control:read` | List the official permission catalog. |
 | `GET` | `/access-control/users/{user_id}/permissions` | `access_control:read` | Read another user's permissions. |
 | `PUT` | `/access-control/users/{user_id}/permissions` | `access_control:write` | Replace another user's permissions. |
 
@@ -451,8 +503,8 @@ The seed creates or updates:
 
 | E-mail | Password | State | Permissions |
 | --- | --- | --- | --- |
-| `admin@atlas.local` | `AtlasAdmin123!` | Active, superuser | Auth administrative permissions and Core command permissions. |
-| `librarian@atlas.local` | `AtlasUser123!` | Active | Library-operator permissions. |
+| `admin@atlas.local` | `AtlasAdmin123!` | Active, superuser | Administrative role, Auth administrative permissions and Core command permissions. |
+| `librarian@atlas.local` | `AtlasUser123!` | Active | Library-operator role and catalog permissions. |
 | `blocked@atlas.local` | `AtlasBlocked123!` | Inactive | None. |
 
 The seed is idempotent. It can run again without duplicating users or permissions.

@@ -31,8 +31,19 @@ Testes do `shared_kernel` protegem primitivas que podem ser usadas por mais de u
 | `eventing_api` | Health check. |
 | `notification_api` | Health check. |
 | `observability_api` | Health check. |
+| `contracts` | Schemas JSON e contrato de introspeccao Auth/Core. |
 | `integration` | Contrato comum de health, CORS, erro entre APIs e settings de nome por servico. |
+| `migrations` | Heads e upgrade das migrations Alembic da Core e do Auth. |
 | `shared_kernel` | `DateTimeService`, primitivas de erro estruturado e contratos da fabrica CRUD. |
+
+## CI
+
+O GitHub Actions executa:
+
+- Ruff;
+- Pytest;
+- build Docker das cinco APIs via `make build-apis`;
+- build MkDocs PT-BR e EN com `--strict`.
 
 ## Nota tecnica
 

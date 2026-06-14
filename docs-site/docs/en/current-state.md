@@ -15,7 +15,8 @@ AtlasCore is a backend monorepo with:
 - Docker Compose for local infrastructure;
 - Poetry for dependency management;
 - MkDocs documentation in English and Portuguese;
-- tests grouped by service and cross-service contracts.
+- tests grouped by service and cross-service contracts;
+- GitHub Actions for linting, tests, Docker image builds and documentation builds.
 
 ```text
 AtlasCore/
@@ -58,6 +59,7 @@ Both product services now have real functional slices.
 - `public_assets` as a Core module for public images/documents;
 - SQLAlchemy timestamp and soft-delete mixins from the shared kernel;
 - runtime settings separated between Core database/cache settings and platform discovery settings;
+- a readiness endpoint checking Postgres, Redis and the Auth dependency;
 - toolbox seeds for Core library data.
 
 `auth_api` has:
@@ -74,8 +76,14 @@ Both product services now have real functional slices.
 - refresh token rotation through the active session;
 - current-session logout and global logout;
 - `token_version` for revocation;
-- RBAC through the `auth_user_permissions` table;
+- direct user-level permissions;
+- administrative and operational roles;
+- user-role relationships;
+- permissions inherited through roles;
+- permission catalog exposed by the API;
+- administrative role endpoints;
 - FastAPI guards for authenticated users and explicit permissions;
+- internal introspection to authorize Core calls;
 - demo user seed with permissions.
 
 ## Services
@@ -83,7 +91,7 @@ Both product services now have real functional slices.
 | Runtime | Status | Responsibility |
 | --- | --- | --- |
 | `core_api` | Functional first slice | Business API, Postgres owner, library CRUD, public assets. |
-| `auth_api` | Functional identity API | User CRUD, bcrypt credentials, JWT access/refresh, Redis sessions, RBAC and `atlas_auth` ownership. |
+| `auth_api` | Functional identity API | User CRUD, bcrypt credentials, JWT access/refresh, Redis sessions, RBAC with roles/permissions and `atlas_auth` ownership. |
 | `eventing_api` | Scaffolded API boundary | Kafka-facing contracts, schemas, topics, streams, outbox and projections. |
 | `notification_api` | Scaffolded API boundary | E-mail, Slack, templates, channels and delivery attempts. |
 | `observability_api` | Scaffolded API boundary | Incidents, alerts, dashboards, log queries and releases. |
@@ -206,6 +214,14 @@ Docs are split into two MkDocs configs:
 
 This keeps the English and Portuguese navigation readable instead of mixing both languages on every page.
 
+The public deployment uses:
+
+```bash
+poetry run mkdocs gh-deploy --force -f docs-site/mkdocs.yml
+```
+
+`docs-site/mkdocs.yml` points to the primary PT-BR version published on GitHub Pages.
+
 ## Tests
 
 The test suite currently covers:
@@ -226,6 +242,45 @@ The test suite currently covers:
 - shared error contracts;
 - service-specific service-name settings;
 - shared CRUD route factory contracts.
+- JSON schemas under `contracts/`;
+- Core and Auth Alembic migrations;
+- GitHub Actions running Ruff, Pytest, API Docker image builds and MkDocs builds.
+
+## CI and Docker
+
+The `.github/workflows/ci.yml` workflow runs on every push and pull request to `main`:
+
+1. sets up Python 3.14;
+2. installs Poetry 2.4.1;
+3. installs dependencies with the `docs` group;
+4. runs Ruff;
+5. runs the test suite;
+6. runs `make build-apis`;
+7. builds PT-BR and EN documentation with `--strict`.
+
+The `make build-apis` target runs:
+
+```bash
+docker compose --profile apis build
+```
+
+That profile builds images for:
+
+- `core-api`;
+- `auth-api`;
+- `eventing-api`;
+- `notification-api`;
+- `observability-api`.
+
+Individual build commands are available too:
+
+```bash
+make build-core
+make build-auth
+make build-eventing
+make build-notifications
+make build-observability
+```
 
 ## Toolbox
 
@@ -258,5 +313,6 @@ The next implementation steps should be:
 - expand the backend-to-backend authorization strategy beyond the first Core guard;
 - add real Redis caching to `core_api` when behavior justifies it;
 - wire Kafka only when event/outbox behavior exists;
+- reserve a dedicated day for a calmer documentation review;
 - fill service-specific settings as each provider becomes real code;
 - keep documentation updated as soon as a placeholder becomes code.

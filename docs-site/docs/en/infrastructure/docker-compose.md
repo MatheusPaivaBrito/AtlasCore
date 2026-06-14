@@ -28,6 +28,7 @@ Kafka, product APIs, platform APIs, Loki and Grafana do not start by default.
 | `eventing` | `eventing-api` with Kafka and Postgres. |
 | `notifications` | `notification-api` with Redis. |
 | `observability` | `observability-api` with Loki and Grafana. |
+| `apis` | Every available backend for API image builds/runtime. |
 | `platform` | Consolidated platform APIs and their support services. |
 | `dev` | Every available backend plus supporting platform services. |
 
@@ -41,6 +42,19 @@ make compose-notifications
 make compose-observability
 make compose-dev
 ```
+
+Image builds also go through the Makefile:
+
+```bash
+make build-apis
+make build-core
+make build-auth
+make build-eventing
+make build-notifications
+make build-observability
+```
+
+The CI uses `make build-apis`, which runs `docker compose --profile apis build`.
 
 ## Job Containers
 
@@ -68,9 +82,9 @@ Those jobs use the same Compose network as Postgres and Redis, so database URLs 
 
 | Compose Service | App | Profile |
 | --- | --- | --- |
-| `eventing-api` | `apps/eventing_api` | `eventing`, `platform`, `dev` |
-| `observability-api` | `apps/observability_api` | `observability`, `platform`, `dev` |
-| `notification-api` | `apps/notification_api` | `notifications`, `platform`, `dev` |
+| `eventing-api` | `apps/eventing_api` | `eventing`, `apis`, `platform`, `dev` |
+| `observability-api` | `apps/observability_api` | `observability`, `apis`, `platform`, `dev` |
+| `notification-api` | `apps/notification_api` | `notifications`, `apis`, `platform`, `dev` |
 
 ## Public Assets
 

@@ -30,6 +30,7 @@ Os outros servicos ficam atras de profiles do Compose.
 | `eventing` | `eventing-api` com Kafka e Postgres. |
 | `notifications` | `notification-api` com Redis. |
 | `observability` | `observability-api` com Loki e Grafana. |
+| `apis` | Todos os backends disponiveis para build/runtime das APIs. |
 | `platform` | APIs de plataforma. |
 | `dev` | Todos os backends disponiveis e suportes necessarios. |
 
@@ -43,6 +44,19 @@ make compose-notifications
 make compose-observability
 make compose-dev
 ```
+
+Builds de imagem tambem passam pelo Makefile:
+
+```bash
+make build-apis
+make build-core
+make build-auth
+make build-eventing
+make build-notifications
+make build-observability
+```
+
+O CI usa `make build-apis`, que chama `docker compose --profile apis build`.
 
 ## `.env`
 

@@ -10,7 +10,10 @@ Essa separação evita tratar JWT como uma senha permanente. O token prova ident
 | --- | --- | --- |
 | Usuário | Postgres `atlas_auth.auth_users` | Identidade e estado da conta. |
 | Credencial | Postgres `atlas_auth.auth_user_credentials` | Hash bcrypt da senha. |
-| Permissão | Postgres `atlas_auth.auth_user_permissions` | Autorização no formato `domain:action`. |
+| Permissão direta | Postgres `atlas_auth.auth_user_permissions` | Autorização atribuída diretamente ao usuário no formato `domain:action`. |
+| Role | Postgres `atlas_auth.auth_roles` | Grupo reutilizável de permissões. |
+| Permissão da role | Postgres `atlas_auth.auth_role_permissions` | Permissões herdadas por todos os usuários da role. |
+| Usuário-role | Postgres `atlas_auth.auth_user_roles` | Associação entre identidade e roles. |
 | Sessão | Redis | Estado runtime do dispositivo logado. |
 | Access token | JWT | Prova curta de autenticação. |
 | Refresh token | JWT + Redis | Renovação controlada por sessão ativa. |
@@ -83,7 +86,7 @@ auth:{user_id}:sessions
 
 ## RBAC
 
-RBAC no AtlasCore começa simples:
+RBAC no AtlasCore usa uma base simples e expansível:
 
 ```text
 domain:action
@@ -97,11 +100,50 @@ users:write
 users:delete
 access_control:read
 access_control:write
+roles:read
+roles:write
 ```
 
-A tabela `auth_user_permissions` guarda permissões por usuário.
+As permissões efetivas de um usuário são calculadas a partir de:
 
-`is_superuser=True` funciona como bypass administrativo.
+- permissões diretas em `auth_user_permissions`;
+- permissões herdadas das roles em `auth_role_permissions`;
+- bypass administrativo quando `is_superuser=True`.
+
+Isso permite começar simples, atribuindo permissão direto ao usuário, e crescer para perfis reutilizáveis como `admin`, `librarian` ou `viewer`.
+
+## Roles
+
+Roles vivem em:
+
+```text
+apps/auth_api/src/auth_api/modules/roles/
+```
+
+Esse módulo possui:
+
+- entidade `Role`;
+- entidade `RolePermission`;
+- entidade `UserRole`;
+- commands, queries e handlers;
+- router administrativo `/roles`;
+- rotas para consultar e substituir roles de um usuário em `/access-control/users/{user_id}/roles`.
+
+Roles não substituem permissões diretas. Elas reduzem repetição quando vários usuários precisam do mesmo pacote de permissões.
+
+## Catálogo de permissões
+
+O catálogo tipado de permissões fica em:
+
+```text
+apps/auth_api/src/auth_api/modules/access_control/application/permissions.py
+```
+
+Ele evita strings soltas nas rotas e permite expor uma lista oficial para clientes administrativos por:
+
+```text
+GET /access-control/permissions/catalog
+```
 
 ## Guards
 
@@ -126,7 +168,8 @@ Fluxo do guard:
 4. carrega usuário no Postgres;
 5. rejeita usuário inativo ou deletado;
 6. compara `token_version`;
-7. verifica permissão quando a rota exige.
+7. calcula permissões efetivas;
+8. verifica permissão quando a rota exige.
 
 ## Estado atual da integração
 
@@ -137,6 +180,6 @@ Na Core, a regra atual e:
 - rotas de query ficam publicas para catalogo;
 - rotas de command chamam Auth por introspeccao interna;
 - Core envia credenciais internas de servico;
-- Auth valida servico chamador, token, sessao Redis, usuario, `token_version` e permissao `domain:action`.
+- Auth valida servico chamador, token, sessao Redis, usuario, `token_version`, roles e permissao `domain:action`.
 
 O contrato completo entre Auth e Core esta documentado em [Contrato Auth/Core](contrato-auth-core.md).

@@ -97,6 +97,20 @@ make docs-en   # English on 8081
 make docs-all  # build both
 ```
 
+## CI
+
+GitHub Actions runs on every push and pull request to `main`.
+
+Current steps:
+
+1. set up Python 3.14;
+2. install Poetry 2.4.1;
+3. install dependencies with `poetry install --with docs`;
+4. run `poetry run ruff check .`;
+5. run `poetry run pytest tests`;
+6. run `make build-apis`;
+7. build PT-BR and EN MkDocs sites with `--strict`.
+
 ## Makefile Help Pages
 
 `make` prints a short navigation index. Specific pages keep the help readable:
@@ -201,6 +215,25 @@ make compose-core
 make compose-auth
 make compose-platform
 ```
+
+Build every API image:
+
+```bash
+make build
+make build-apis
+```
+
+Build one image:
+
+```bash
+make build-core
+make build-auth
+make build-eventing
+make build-notifications
+make build-observability
+```
+
+`make build-apis` uses the Compose `apis` profile and builds images for all five backends.
 
 ## Database Migrations
 

@@ -23,8 +23,10 @@ Os testes atuais cobrem:
 - health check por API;
 - contrato de health entre APIs;
 - contrato de CORS entre APIs;
+- contrato Auth/Core e schemas JSON em `contracts/`;
 - docs customizados e landing page da Core API;
 - registro ORM para Alembic;
+- migrations Alembic da Core e do Auth;
 - estrutura vertical da livraria;
 - settings e montagem de URLs;
 - settings de nome de servico por API;
@@ -39,6 +41,20 @@ make docs      # Portugues na 8080
 make docs-en   # Ingles na 8081
 make docs-all  # build das duas versoes
 ```
+
+## CI
+
+O GitHub Actions roda em push e pull request para `main`.
+
+Etapas atuais:
+
+1. instalar Python 3.14;
+2. instalar Poetry 2.4.1;
+3. instalar dependencias com `poetry install --with docs`;
+4. rodar `poetry run ruff check .`;
+5. rodar `poetry run pytest tests`;
+6. rodar `make build-apis`;
+7. rodar build MkDocs PT-BR e EN com `--strict`.
 
 ## Ajuda do Makefile
 
@@ -183,6 +199,25 @@ make compose-core
 make compose-auth
 make compose-platform
 ```
+
+Build de todas as APIs:
+
+```bash
+make build
+make build-apis
+```
+
+Build individual:
+
+```bash
+make build-core
+make build-auth
+make build-eventing
+make build-notifications
+make build-observability
+```
+
+`make build-apis` usa o profile Compose `apis` e constroi as imagens dos cinco backends.
 
 ## Migrations
 
