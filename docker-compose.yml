@@ -70,7 +70,7 @@ services:
   kafka:
     image: bitnami/kafka:3.7
     container_name: atlas-kafka
-    profiles: ["dev", "eventing", "platform"]
+    profiles: ["dev", "apis", "eventing", "platform"]
     environment:
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: broker,controller
@@ -91,7 +91,7 @@ services:
   loki:
     image: grafana/loki:3.0.0
     container_name: atlas-loki
-    profiles: ["dev", "observability", "platform"]
+    profiles: ["dev", "apis", "observability", "platform"]
     ports:
       - "${LOKI_PORT:-3100}:3100"
     command: -config.file=/etc/loki/local-config.yaml
@@ -99,7 +99,7 @@ services:
   grafana:
     image: grafana/grafana:11.0.0
     container_name: atlas-grafana
-    profiles: ["dev", "observability", "platform"]
+    profiles: ["dev", "apis", "observability", "platform"]
     ports:
       - "${GRAFANA_PORT:-3000}:3000"
     depends_on:
@@ -272,7 +272,7 @@ services:
       context: .
       dockerfile: apps/eventing_api/dockerfile
     container_name: atlas-eventing-api
-    profiles: ["dev", "eventing", "platform"]
+    profiles: ["dev", "apis", "eventing", "platform"]
     environment:
       <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: eventing_api
@@ -291,7 +291,7 @@ services:
       context: .
       dockerfile: apps/notification_api/dockerfile
     container_name: atlas-notification-api
-    profiles: ["dev", "notifications", "platform"]
+    profiles: ["dev", "apis", "notifications", "platform"]
     environment:
       <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: notification_api
@@ -308,7 +308,7 @@ services:
       context: .
       dockerfile: apps/observability_api/dockerfile
     container_name: atlas-observability-api
-    profiles: ["dev", "observability", "platform"]
+    profiles: ["dev", "apis", "observability", "platform"]
     environment:
       <<: [*atlas-service-urls, *atlas-cors]
       SERVICE_NAME: observability_api

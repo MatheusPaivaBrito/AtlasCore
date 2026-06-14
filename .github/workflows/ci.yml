@@ -47,7 +47,7 @@ jobs:
         run: poetry run pytest tests
 
       - name: Build API Docker images
-        run: docker compose --profile apis build
+        run: make build-apis
 
       - name: Build Portuguese docs
         run: poetry run mkdocs build -f docs-site/mkdocs.pt-br.yml --strict

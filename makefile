@@ -60,7 +60,8 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 .PHONY: help makehelp help-index help-all help-compose help-core help-auth help-eventing \
 	help-notifications help-observability help-db help-docs \
 	compose compose-dev compose-apis compose-platform compose-core compose-auth \
-	compose-eventing compose-notifications compose-observability up infra down logs ps build \
+	compose-eventing compose-notifications compose-observability up infra down logs ps \
+	build build-apis build-core build-auth build-eventing build-notifications build-observability \
 	ensure ensure-all ensure-core ensure-auth ensure-eventing ensure-notifications ensure-observability \
 	dev dev-all dev-core dev-auth dev-eventing dev-notifications dev-observability \
 	prod prod-all prod-core prod-auth prod-eventing prod-notifications prod-observability \
@@ -118,7 +119,15 @@ help-compose:
 	@echo "  make down                 Stop Compose services"
 	@echo "  make logs                 Follow Compose logs"
 	@echo "  make ps                   List Compose services"
-	@echo "  make build                Build dev-profile images"
+	@echo ""
+	@echo "Docker image builds"
+	@echo "  make build                Build all API images"
+	@echo "  make build-apis           Build all API images"
+	@echo "  make build-core           Build core_api image"
+	@echo "  make build-auth           Build auth_api image"
+	@echo "  make build-eventing       Build eventing_api image"
+	@echo "  make build-notifications  Build notification_api image"
+	@echo "  make build-observability  Build observability_api image"
 	@echo ""
 	@echo "Grouped runtime"
 	@echo "  make compose-dev          Start dev profile services"
@@ -134,6 +143,7 @@ help-core:
 	@echo "  make dev-core             Run core_api locally on port $(CORE_API_PORT)"
 	@echo "  make prod                 Run core_api with gunicorn on port $(CORE_API_PORT)"
 	@echo "  make prod-core            Run core_api with gunicorn on port $(CORE_API_PORT)"
+	@echo "  make build-core           Build core_api Docker image"
 	@echo "  make compose-core         Start core_api container with infra"
 	@echo ""
 	@echo "Database"
@@ -150,6 +160,7 @@ help-auth:
 	@echo "  make ensure-auth          Ensure Auth dependencies are ready"
 	@echo "  make dev-auth             Run auth_api locally on port $(AUTH_API_PORT)"
 	@echo "  make prod-auth            Run auth_api with gunicorn on port $(AUTH_API_PORT)"
+	@echo "  make build-auth           Build auth_api Docker image"
 	@echo "  make compose-auth         Start auth_api container with infra"
 	@echo ""
 	@echo "Database"
@@ -166,6 +177,7 @@ help-eventing:
 	@echo "  make ensure-eventing      Ensure Postgres and Kafka are ready"
 	@echo "  make dev-eventing         Run eventing_api locally on port $(EVENTING_API_PORT)"
 	@echo "  make prod-eventing        Run eventing_api with gunicorn on port $(EVENTING_API_PORT)"
+	@echo "  make build-eventing       Build eventing_api Docker image"
 	@echo "  make compose-eventing     Start eventing_api container with Kafka"
 
 help-notifications:
@@ -175,6 +187,7 @@ help-notifications:
 	@echo "  make ensure-notifications Ensure Redis is ready"
 	@echo "  make dev-notifications    Run notification_api locally on port $(NOTIFICATION_API_PORT)"
 	@echo "  make prod-notifications   Run notification_api with gunicorn on port $(NOTIFICATION_API_PORT)"
+	@echo "  make build-notifications  Build notification_api Docker image"
 	@echo "  make compose-notifications  Start notification_api container with Redis"
 
 help-observability:
@@ -184,6 +197,7 @@ help-observability:
 	@echo "  make ensure-observability Ensure Loki and Grafana are ready"
 	@echo "  make dev-observability    Run observability_api locally on port $(OBSERVABILITY_API_PORT)"
 	@echo "  make prod-observability   Run observability_api with gunicorn on port $(OBSERVABILITY_API_PORT)"
+	@echo "  make build-observability  Build observability_api Docker image"
 	@echo "  make compose-observability  Start observability_api container with Loki and Grafana"
 
 help-db:
@@ -256,8 +270,25 @@ logs:
 ps:
 	$(COMPOSE) ps
 
-build:
-	$(COMPOSE) --profile dev build
+build: build-apis
+
+build-apis:
+	$(COMPOSE) --profile apis build
+
+build-core:
+	$(COMPOSE) build core-api
+
+build-auth:
+	$(COMPOSE) build auth-api
+
+build-eventing:
+	$(COMPOSE) build eventing-api
+
+build-notifications:
+	$(COMPOSE) build notification-api
+
+build-observability:
+	$(COMPOSE) build observability-api
 
 # ------------------------------------
 # RUNTIME DEPENDENCY CHECKS
