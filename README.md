@@ -2,6 +2,8 @@
 
 AtlasCore is a reusable FastAPI backend foundation built around DDD, Clean Architecture, Postgres, Redis, Kafka-ready platform services and MkDocs documentation.
 
+📚 Documentation: https://matheuspaivabrito.github.io/AtlasCore/
+
 This README is intentionally short. The complete architecture explanation lives in MkDocs.
 
 ## Documentation
