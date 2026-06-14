@@ -43,6 +43,27 @@ class ObservabilitySettings(BaseSettings):
         )
 
     # ------------------------------------
+    # LOKI
+    # ------------------------------------
+    LOKI_URL: str = "http://localhost:3100"
+    LOKI_READY_URL: str = "http://localhost:3100/ready"
+
+    # ------------------------------------
+    # GRAFANA
+    # ------------------------------------
+    GRAFANA_URL: str = "http://localhost:3000"
+    GRAFANA_HEALTH_URL: str = "http://localhost:3000/api/health"
+
+    # ------------------------------------
+    # SENTRY
+    # ------------------------------------
+    SENTRY_DSN: str | None = None
+    SENTRY_ENVIRONMENT: str = Field(
+        default="development",
+        validation_alias=AliasChoices("SENTRY_ENVIRONMENT", "ENVIRONMENT"),
+    )
+
+    # ------------------------------------
     # PYDANTIC
     # ------------------------------------
     model_config = SettingsConfigDict(

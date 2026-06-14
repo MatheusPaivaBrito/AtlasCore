@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlascore.local/contracts/auth-notification/email-delivery/request.v1.schema.json",
+  "title": "Auth Notification Email Delivery Request v1",
+  "type": "object",
+  "required": ["to", "subject", "body"],
+  "additionalProperties": false,
+  "properties": {
+    "to": {
+      "type": "string",
+      "format": "email",
+      "minLength": 3,
+      "maxLength": 320
+    },
+    "subject": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 180
+    },
+    "body": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 10000
+    },
+    "from_email": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "email",
+          "maxLength": 320
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "metadata": {
+      "type": "object"
+    }
+  }
+}

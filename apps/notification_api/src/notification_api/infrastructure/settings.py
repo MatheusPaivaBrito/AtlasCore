@@ -43,6 +43,62 @@ class NotificationSettings(BaseSettings):
         )
 
     # ------------------------------------
+    # EMAIL
+    # ------------------------------------
+    SENDGRID_API_KEY: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("NOTIFICATION_SENDGRID_API_KEY", "SENDGRID_API_KEY"),
+    )
+    DEFAULT_EMAIL_FROM: str = Field(
+        default="noreply@atlas.local",
+        validation_alias=AliasChoices("NOTIFICATION_DEFAULT_EMAIL_FROM", "DEFAULT_EMAIL_FROM"),
+    )
+
+    # ------------------------------------
+    # SLACK
+    # ------------------------------------
+    SLACK_WEBHOOK_URL: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("NOTIFICATION_SLACK_WEBHOOK_URL", "SLACK_WEBHOOK_URL"),
+    )
+    SLACK_DEFAULT_CHANNEL: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("NOTIFICATION_SLACK_DEFAULT_CHANNEL", "SLACK_DEFAULT_CHANNEL"),
+    )
+
+    # ------------------------------------
+    # SERVICE AUTH
+    # ------------------------------------
+    SERVICE_JWT_SECRET_KEY: str = Field(
+        default="atlas-service-jwt-dev-secret-change-me-32-bytes",
+        validation_alias=AliasChoices("NOTIFICATION_SERVICE_JWT_SECRET_KEY", "SERVICE_JWT_SECRET_KEY"),
+    )
+    SERVICE_JWT_ALGORITHM: str = Field(
+        default="HS256",
+        validation_alias=AliasChoices("NOTIFICATION_SERVICE_JWT_ALGORITHM", "SERVICE_JWT_ALGORITHM"),
+    )
+    SERVICE_JWT_ISSUER: str = Field(
+        default="atlascore",
+        validation_alias=AliasChoices("NOTIFICATION_SERVICE_JWT_ISSUER", "SERVICE_JWT_ISSUER"),
+    )
+    SERVICE_JWT_TTL_SECONDS: int = Field(
+        default=300,
+        validation_alias=AliasChoices("NOTIFICATION_SERVICE_JWT_TTL_SECONDS", "SERVICE_JWT_TTL_SECONDS"),
+    )
+    SERVICE_JWT_ALLOWED_CALLERS_RAW: str = Field(
+        default="auth_api,core_api",
+        validation_alias=AliasChoices("NOTIFICATION_SERVICE_JWT_ALLOWED_CALLERS", "SERVICE_JWT_ALLOWED_CALLERS"),
+    )
+
+    @property
+    def SERVICE_JWT_ALLOWED_CALLERS(self) -> tuple[str, ...]:
+        return tuple(
+            item.strip()
+            for item in self.SERVICE_JWT_ALLOWED_CALLERS_RAW.split(",")
+            if item.strip()
+        )
+
+    # ------------------------------------
     # PYDANTIC
     # ------------------------------------
     model_config = SettingsConfigDict(

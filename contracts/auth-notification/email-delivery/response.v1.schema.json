@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlascore.local/contracts/auth-notification/email-delivery/response.v1.schema.json",
+  "title": "Auth Notification Email Delivery Response v1",
+  "type": "object",
+  "required": [
+    "accepted",
+    "delivery_id",
+    "channel",
+    "provider",
+    "provider_status",
+    "mode",
+    "received_at",
+    "to",
+    "from_email",
+    "subject"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "accepted": {
+      "type": "boolean"
+    },
+    "delivery_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "provider_status": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "received_at": {
+      "type": "string"
+    },
+    "to": {
+      "type": "string",
+      "format": "email"
+    },
+    "from_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "subject": {
+      "type": "string"
+    }
+  }
+}

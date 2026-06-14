@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://atlascore.local/contracts/core-notification/slack-delivery/response.v1.schema.json",
+  "title": "Core Notification Slack Delivery Response v1",
+  "type": "object",
+  "required": [
+    "accepted",
+    "delivery_id",
+    "channel",
+    "provider",
+    "provider_status",
+    "mode",
+    "received_at",
+    "target"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "accepted": {
+      "type": "boolean"
+    },
+    "delivery_id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "channel": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "provider_status": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "received_at": {
+      "type": "string"
+    },
+    "target": {
+      "type": "string"
+    }
+  }
+}

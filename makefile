@@ -17,6 +17,7 @@ AUTH_ALEMBIC = apps/auth_api/alembic.ini
 DOCS_PT = docs-site/mkdocs.pt-br.yml
 DOCS_EN = docs-site/mkdocs.en.yml
 ENSURE_RUNTIME = poetry run python toolbox/checks/ensure_runtime_dependencies.py
+SERVICE_TOKEN_SCRIPT = poetry run python toolbox/security/create_service_token.py
 CORE_MIGRATE_JOB = core-migrate
 AUTH_MIGRATE_JOB = auth-migrate
 CORE_SEED_JOB = core-seed
@@ -68,7 +69,7 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 	migrate migrate-core migrate-auth migrate-all migrate-local migrate-core-local migrate-auth-local \
 	revision revision-core revision-auth \
 	seed seed-core seed-auth seed-all seed-local seed-core-local seed-auth-local \
-	docs docs-pt docs-en docs-all test
+	service-token docs docs-pt docs-en docs-all test
 
 # ------------------------------------
 # HELP PAGES
@@ -189,6 +190,7 @@ help-notifications:
 	@echo "  make prod-notifications   Run notification_api with gunicorn on port $(NOTIFICATION_API_PORT)"
 	@echo "  make build-notifications  Build notification_api Docker image"
 	@echo "  make compose-notifications  Start notification_api container with Redis"
+	@echo "  make service-token        Generate a service JWT for protected notification routes"
 
 help-observability:
 	@echo "AtlasCore / Observability API"
@@ -471,6 +473,21 @@ seed-auth-local: ensure-auth
 	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
 	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(AUTH_PYTHONPATH) \
 	poetry run python toolbox/seeds/auth_api/user_seed.py
+
+# ------------------------------------
+# SECURITY TOOLING
+# ------------------------------------
+SUBJECT ?= core_api
+AUDIENCE ?= notification_api
+SCOPES ?= notifications:send
+
+service-token:
+	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
+	PYTHONPATH=$(SHARED_PYTHONPATH) $(SERVICE_TOKEN_SCRIPT) \
+		--env-file $(ENV_FILE) \
+		--subject $(SUBJECT) \
+		--audience $(AUDIENCE) \
+		--scopes $(SCOPES)
 
 # ------------------------------------
 # DOCS AND TESTS
