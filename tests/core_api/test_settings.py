@@ -24,6 +24,7 @@ def test_settings_builds_connection_values_from_env_parts() -> None:
     assert settings.REDIS_URL == "redis://redis:6380/2"
     assert settings.REDIS_KEY_PREFIX == "core"
     assert settings.AUTH_API_INTERNAL_URL == "http://auth-api:8000"
+    assert settings.AUTH_HEALTH_PATH == "/health"
     assert settings.AUTH_INTROSPECTION_PATH == "/internal/auth/introspect"
     assert settings.AUTH_INTROSPECTION_TIMEOUT_SECONDS == 0.7
     assert settings.CORE_TO_AUTH_SERVICE_KEY == "core-secret"

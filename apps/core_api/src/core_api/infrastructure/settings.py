@@ -95,6 +95,7 @@ class CoreSettings(BaseSettings):
     # AUTH API
     # ------------------------------------
     AUTH_API_INTERNAL_URL: str = "http://localhost:8001"
+    AUTH_HEALTH_PATH: str = "/health"
     AUTH_INTROSPECTION_PATH: str = "/internal/auth/introspect"
     AUTH_INTROSPECTION_TIMEOUT_SECONDS: float = Field(
         default=1.0,
