@@ -2,6 +2,14 @@
 # Auth Domain Entities (ORM Registration)
 # ------------------------------------
 from auth_api.modules.access_control.domain.permission_entity import UserPermissionEntity
+from auth_api.modules.roles.role_entity import RoleEntity, RolePermissionEntity, UserRoleEntity
 from auth_api.modules.users.user_entity import UserCredentialEntity, UserEntity
 
-__all__ = ["UserCredentialEntity", "UserEntity", "UserPermissionEntity"]
+__all__ = [
+    "RoleEntity",
+    "RolePermissionEntity",
+    "UserCredentialEntity",
+    "UserEntity",
+    "UserPermissionEntity",
+    "UserRoleEntity",
+]

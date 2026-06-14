@@ -237,6 +237,128 @@ async def test_auth_login_rejects_invalid_credentials(auth_database: None) -> No
 
 
 @pytest.mark.asyncio
+async def test_auth_roles_grant_inherited_permissions(auth_database: None) -> None:
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post(
+            "/users",
+            json={
+                "email": "admin@atlas.local",
+                "full_name": "Atlas Admin",
+                "password": "AtlasAdmin123!",
+                "is_superuser": True,
+            },
+        )
+        admin_login_response = await client.post(
+            "/auth/login",
+            json={"email": "admin@atlas.local", "password": "AtlasAdmin123!"},
+        )
+        admin_headers = {"Authorization": f"Bearer {admin_login_response.json()['access_token']}"}
+
+        role_response = await client.post(
+            "/roles",
+            headers=admin_headers,
+            json={
+                "code": "catalog_manager",
+                "name": "Catalog Manager",
+                "description": "Can manage catalog books.",
+                "permissions": [{"domain": "books", "action": "write"}],
+            },
+        )
+        assert role_response.status_code == 201
+        role = role_response.json()
+        assert role["code"] == "catalog_manager"
+        assert role["permissions"] == [{"domain": "books", "action": "write"}]
+
+        user_response = await client.post(
+            "/users",
+            headers=admin_headers,
+            json={
+                "email": "reader@atlas.local",
+                "full_name": "Atlas Reader",
+                "password": "AtlasReader123!",
+            },
+        )
+        assert user_response.status_code == 201
+        user_id = user_response.json()["id"]
+
+        assign_response = await client.put(
+            f"/access-control/users/{user_id}/roles",
+            headers=admin_headers,
+            json={"role_ids": [role["id"]]},
+        )
+        assert assign_response.status_code == 200
+        assert assign_response.json() == [
+            {
+                "id": role["id"],
+                "code": "catalog_manager",
+                "name": "Catalog Manager",
+            }
+        ]
+
+        user_login_response = await client.post(
+            "/auth/login",
+            json={"email": "reader@atlas.local", "password": "AtlasReader123!"},
+        )
+        assert user_login_response.status_code == 200
+        user_auth = user_login_response.json()
+        user_headers = {"Authorization": f"Bearer {user_auth['access_token']}"}
+        assert user_auth["permissions"] == [{"domain": "books", "action": "write"}]
+        assert user_auth["user"]["roles"][0]["code"] == "catalog_manager"
+
+        profile_response = await client.get("/access-control/me", headers=user_headers)
+        assert profile_response.status_code == 200
+        assert profile_response.json()["direct_permissions"] == []
+        assert profile_response.json()["permissions"] == [{"domain": "books", "action": "write"}]
+        assert profile_response.json()["roles"][0]["code"] == "catalog_manager"
+
+        allowed_response = await client.post(
+            "/internal/auth/introspect",
+            headers={**user_headers, **SERVICE_HEADERS},
+            json={"required_permission": {"domain": "books", "action": "write"}},
+        )
+        assert allowed_response.status_code == 200
+        assert allowed_response.json()["allowed"] is True
+        assert allowed_response.json()["roles"][0]["code"] == "catalog_manager"
+
+        replace_permissions_response = await client.put(
+            f"/roles/{role['id']}/permissions",
+            headers=admin_headers,
+            json={"permissions": [{"domain": "books", "action": "delete"}]},
+        )
+        assert replace_permissions_response.status_code == 200
+        assert replace_permissions_response.json()["permissions"] == [{"domain": "books", "action": "delete"}]
+
+        denied_after_update_response = await client.post(
+            "/internal/auth/introspect",
+            headers={**user_headers, **SERVICE_HEADERS},
+            json={"required_permission": {"domain": "books", "action": "write"}},
+        )
+        assert denied_after_update_response.status_code == 200
+        assert denied_after_update_response.json()["allowed"] is False
+
+        allowed_after_update_response = await client.post(
+            "/internal/auth/introspect",
+            headers={**user_headers, **SERVICE_HEADERS},
+            json={"required_permission": {"domain": "books", "action": "delete"}},
+        )
+        assert allowed_after_update_response.status_code == 200
+        assert allowed_after_update_response.json()["allowed"] is True
+
+        delete_role_response = await client.delete(f"/roles/{role['id']}", headers=admin_headers)
+        assert delete_role_response.status_code == 204
+
+        denied_after_delete_response = await client.post(
+            "/internal/auth/introspect",
+            headers={**user_headers, **SERVICE_HEADERS},
+            json={"required_permission": {"domain": "books", "action": "delete"}},
+        )
+        assert denied_after_delete_response.status_code == 200
+        assert denied_after_delete_response.json()["allowed"] is False
+
+
+@pytest.mark.asyncio
 async def test_auth_password_policy_is_public(auth_database: None) -> None:
     transport = ASGITransport(app=app)
 
@@ -417,3 +539,8 @@ def test_auth_user_routes_are_registered() -> None:
     assert "/sessions/me" in paths
     assert "/access-control/me" in paths
     assert "/access-control/permissions/catalog" in paths
+    assert "/access-control/users/{user_id}/roles" in paths
+    assert "/roles" in paths
+    assert "/roles/{role_id}" in paths
+    assert "/roles/{role_id}/permissions" in paths
+    assert "/roles/{role_id}/restore" in paths

@@ -8,6 +8,8 @@ from auth_api.modules.auth.presentation.routes import internal_router as interna
 from auth_api.modules.auth.presentation.routes import router as auth_router
 from auth_api.modules.sessions.presentation.routes import router as sessions_router
 from auth_api.modules.access_control.presentation.routes import router as access_control_router
+from auth_api.modules.roles.role_router import router as roles_router
+from auth_api.modules.roles.role_router import user_roles_router
 
 
 def register_routes(app: FastAPI) -> None:
@@ -19,3 +21,5 @@ def register_routes(app: FastAPI) -> None:
     app.include_router(internal_auth_router)
     app.include_router(sessions_router)
     app.include_router(access_control_router)
+    app.include_router(roles_router)
+    app.include_router(user_roles_router)

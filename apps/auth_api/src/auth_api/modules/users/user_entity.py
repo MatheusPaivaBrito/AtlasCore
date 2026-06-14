@@ -33,6 +33,21 @@ class UserEntity(BaseModel):
         back_populates="user",
         cascade="all, delete-orphan",
     )
+    role_links = relationship(
+        "UserRoleEntity",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+    @property
+    def roles(self) -> list:
+        return [
+            role_link.role
+            for role_link in self.role_links or []
+            if role_link.deleted_at is None
+            and role_link.role is not None
+            and role_link.role.deleted_at is None
+        ]
 
 
 class UserCredentialEntity(BaseModel):

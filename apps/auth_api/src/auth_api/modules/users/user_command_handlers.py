@@ -1,7 +1,7 @@
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from auth_api.modules.access_control.application.permissions import sync_user_permissions
+from auth_api.modules.access_control.application.permissions import sync_user_permissions, sync_user_roles
 from auth_api.modules.auth.application.password_policy import password_policy
 from auth_api.modules.auth.application.passwords import hash_password
 from auth_api.modules.sessions.application.service import SessionService
@@ -40,6 +40,7 @@ class UserCommandHandler:
             user_id=user.id,
             permissions=self._permissions_payload(payload) or [],
         )
+        sync_user_roles(self.session, user_id=user.id, role_ids=payload.role_ids)
         return self.queries.load_user(user_id=user.id)
 
     def update(self, command: UpdateUserCommand) -> UserEntity:
@@ -47,6 +48,7 @@ class UserCommandHandler:
         values = command.payload.model_dump(exclude_unset=True)
         password = values.pop("password", None)
         permissions = values.pop("permissions", None)
+        role_ids = values.pop("role_ids", None)
 
         for field_name, value in values.items():
             setattr(user, field_name, value)
@@ -63,6 +65,8 @@ class UserCommandHandler:
         self._persist_user(user)
         if permissions is not None:
             sync_user_permissions(self.session, user_id=user.id, permissions=permissions)
+        if role_ids is not None:
+            sync_user_roles(self.session, user_id=user.id, role_ids=role_ids)
         return self.queries.load_user(user_id=user.id)
 
     def delete(self, command: DeleteUserCommand) -> None:

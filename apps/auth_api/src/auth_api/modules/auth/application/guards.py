@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from auth_api.infrastructure.database.connection import get_session
 from auth_api.modules.access_control.application.permissions import user_has_permission
+from auth_api.modules.roles.role_entity import RoleEntity, UserRoleEntity
 from auth_api.modules.auth.application.cookies import ACCESS_TOKEN_COOKIE
 from auth_api.modules.auth.application.tokens import jwt_service
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
@@ -111,7 +112,10 @@ class AuthGuard:
     def _load_user(*, session: Session, user_id: UUID) -> UserEntity:
         statement = (
             select(UserEntity)
-            .options(selectinload(UserEntity.permissions))
+            .options(
+                selectinload(UserEntity.permissions),
+                selectinload(UserEntity.role_links).selectinload(UserRoleEntity.role).selectinload(RoleEntity.permissions),
+            )
             .where(UserEntity.id == user_id)
             .limit(1)
         )

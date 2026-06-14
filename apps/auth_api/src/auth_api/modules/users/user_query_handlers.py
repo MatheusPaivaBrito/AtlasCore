@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy import String, cast, or_, select
 from sqlalchemy.orm import Session, selectinload
 
+from auth_api.modules.roles.role_entity import RoleEntity, UserRoleEntity
 from auth_api.modules.users.user_entity import UserEntity
 from auth_api.modules.users.user_queries import GetUserQuery, ListUsersQuery
 from auth_api.shared.exceptions import AuthResourceNotFoundError
@@ -19,7 +20,10 @@ class UserQueryHandler:
     def list(self, query: ListUsersQuery) -> list[UserEntity]:
         limit = max(1, min(query.limit, 100))
         offset = max(0, query.offset)
-        statement = select(UserEntity).options(selectinload(UserEntity.permissions))
+        statement = select(UserEntity).options(
+            selectinload(UserEntity.permissions),
+            selectinload(UserEntity.role_links).selectinload(UserRoleEntity.role).selectinload(RoleEntity.permissions),
+        )
         statement = self._apply_soft_delete_scope(
             statement,
             include_deleted=query.include_deleted,
@@ -33,7 +37,11 @@ class UserQueryHandler:
     def load_user(self, *, user_id: UUID, include_deleted: bool = False) -> UserEntity:
         user = self.session.scalar(
             select(UserEntity)
-            .options(selectinload(UserEntity.credential), selectinload(UserEntity.permissions))
+            .options(
+                selectinload(UserEntity.credential),
+                selectinload(UserEntity.permissions),
+                selectinload(UserEntity.role_links).selectinload(UserRoleEntity.role).selectinload(RoleEntity.permissions),
+            )
             .where(UserEntity.id == user_id)
             .limit(1)
         )

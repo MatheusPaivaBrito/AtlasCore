@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from auth_api.infrastructure.database.connection import get_session
 from auth_api.infrastructure.settings import settings
-from auth_api.modules.access_control.application.permissions import serialize_user_permissions, user_has_permission
+from auth_api.modules.access_control.application.permissions import serialize_user_permissions, serialize_user_roles, user_has_permission
 from auth_api.modules.auth.application.cookies import REFRESH_TOKEN_COOKIE, clear_auth_cookies, set_auth_cookies
 from auth_api.modules.auth.application.guards import auth_guard, bearer_scheme
 from auth_api.modules.auth.application.login_attempts import LoginAttemptService
@@ -33,6 +33,7 @@ from auth_api.modules.auth.presentation.schemas import (
     RefreshResponse,
 )
 from auth_api.modules.sessions.application.service import SessionService, get_session_service
+from auth_api.modules.roles.role_entity import RoleEntity, UserRoleEntity
 from auth_api.modules.users.user_entity import UserEntity
 from auth_api.shared.exceptions import (
     AuthExpiredTokenError,
@@ -70,7 +71,11 @@ def login(
 
     user = session.scalar(
         select(UserEntity)
-        .options(selectinload(UserEntity.credential), selectinload(UserEntity.permissions))
+        .options(
+            selectinload(UserEntity.credential),
+            selectinload(UserEntity.permissions),
+            selectinload(UserEntity.role_links).selectinload(UserRoleEntity.role).selectinload(RoleEntity.permissions),
+        )
         .where(UserEntity.email == payload.email)
         .limit(1)
     )
@@ -234,7 +239,10 @@ def refresh(
 
     user = session.scalar(
         select(UserEntity)
-        .options(selectinload(UserEntity.permissions))
+        .options(
+            selectinload(UserEntity.permissions),
+            selectinload(UserEntity.role_links).selectinload(UserRoleEntity.role).selectinload(RoleEntity.permissions),
+        )
         .where(UserEntity.id == user_id)
         .limit(1)
     )
@@ -345,5 +353,6 @@ def introspect(
             token_version=user.token_version,
         ),
         permissions=permissions,
+        roles=serialize_user_roles(user),
         required_permission=payload.required_permission,
     )

@@ -16,6 +16,14 @@ class PermissionPayload(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserRoleRead(BaseModel):
+    id: UUID
+    code: str
+    name: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserCreate(BaseModel):
     email: str = Field(min_length=5, max_length=180)
     full_name: str = Field(min_length=2, max_length=140)
@@ -23,6 +31,7 @@ class UserCreate(BaseModel):
     is_active: bool = True
     is_superuser: bool = False
     permissions: list[PermissionPayload] = Field(default_factory=list)
+    role_ids: list[UUID] = Field(default_factory=list)
 
     @field_validator("email")
     @classmethod
@@ -37,6 +46,7 @@ class UserUpdate(BaseModel):
     is_active: bool | None = None
     is_superuser: bool | None = None
     permissions: list[PermissionPayload] | None = None
+    role_ids: list[UUID] | None = None
 
     @field_validator("email")
     @classmethod
@@ -60,5 +70,6 @@ class UserRead(BaseModel):
     last_login_ip: str | None = None
     last_login_user_agent: str | None = None
     permissions: list[PermissionPayload] = Field(default_factory=list)
+    roles: list[UserRoleRead] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)

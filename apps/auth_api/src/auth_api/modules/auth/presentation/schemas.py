@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
 
-from auth_api.modules.users.user_schema import PermissionPayload, UserRead
+from auth_api.modules.users.user_schema import PermissionPayload, UserRead, UserRoleRead
 
 
 class LoginRequest(BaseModel):
@@ -99,4 +99,5 @@ class IntrospectionResponse(BaseModel):
     allowed: bool = True
     user: IntrospectionUser
     permissions: list[PermissionPayload] = Field(default_factory=list)
+    roles: list[UserRoleRead] = Field(default_factory=list)
     required_permission: PermissionPayload | None = None

@@ -27,6 +27,14 @@ OPENAPI_TAGS = [
         "description": "Write-side user identity routes.",
     },
     {
+        "name": "roles - query",
+        "description": "Read-side RBAC role routes.",
+    },
+    {
+        "name": "roles - command",
+        "description": "Write-side RBAC role management routes.",
+    },
+    {
         "name": "sessions - query",
         "description": "Read-side routes for active Auth sessions.",
     },

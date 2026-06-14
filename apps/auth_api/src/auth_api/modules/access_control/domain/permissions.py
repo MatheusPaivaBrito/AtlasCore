@@ -13,6 +13,7 @@ class PermissionAction(StrEnum):
 
 class PermissionDomain(StrEnum):
     USERS = "users"
+    ROLES = "roles"
     SESSIONS = "sessions"
     ACCESS_CONTROL = "access_control"
     LIBRARIES = "libraries"
@@ -55,6 +56,10 @@ USERS_READ = permission(PermissionDomain.USERS, PermissionAction.READ, "Read Aut
 USERS_WRITE = permission(PermissionDomain.USERS, PermissionAction.WRITE, "Create, update or restore Auth users.")
 USERS_DELETE = permission(PermissionDomain.USERS, PermissionAction.DELETE, "Soft-delete Auth users.")
 
+ROLES_READ = permission(PermissionDomain.ROLES, PermissionAction.READ, "Read Auth roles.")
+ROLES_WRITE = permission(PermissionDomain.ROLES, PermissionAction.WRITE, "Create, update or restore Auth roles.")
+ROLES_DELETE = permission(PermissionDomain.ROLES, PermissionAction.DELETE, "Soft-delete Auth roles.")
+
 SESSIONS_READ = permission(PermissionDomain.SESSIONS, PermissionAction.READ, "Read active Auth sessions.")
 SESSIONS_DELETE = permission(PermissionDomain.SESSIONS, PermissionAction.DELETE, "Revoke active Auth sessions.")
 
@@ -87,6 +92,9 @@ AUTH_ADMIN_PERMISSIONS = (
     USERS_READ,
     USERS_WRITE,
     USERS_DELETE,
+    ROLES_READ,
+    ROLES_WRITE,
+    ROLES_DELETE,
     SESSIONS_READ,
     SESSIONS_DELETE,
     ACCESS_CONTROL_READ,

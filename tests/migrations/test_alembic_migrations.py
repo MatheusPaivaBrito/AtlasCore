@@ -84,4 +84,4 @@ def test_auth_alembic_history_has_single_head() -> None:
     )
 
     assert result.stdout.count("(head)") == 1
-    assert "20260607_0002" in result.stdout
+    assert "20260607_0003" in result.stdout

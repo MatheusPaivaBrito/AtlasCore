@@ -4,7 +4,12 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from auth_api.infrastructure.database.connection import get_session
-from auth_api.modules.access_control.application.permissions import serialize_user_permissions, sync_user_permissions
+from auth_api.modules.access_control.application.permissions import (
+    serialize_user_direct_permissions,
+    serialize_user_permissions,
+    serialize_user_roles,
+    sync_user_permissions,
+)
 from auth_api.modules.access_control.domain.permissions import ACCESS_CONTROL_READ, PERMISSION_CATALOG
 from auth_api.modules.access_control.presentation.schemas import (
     AccessProfileRead,
@@ -28,6 +33,8 @@ def get_my_access_profile(current_user: UserEntity = auth_guard.require_user()) 
     return AccessProfileRead(
         user_id=current_user.id,
         is_superuser=current_user.is_superuser,
+        roles=serialize_user_roles(current_user),
+        direct_permissions=serialize_user_direct_permissions(current_user),
         permissions=serialize_user_permissions(current_user),
     )
 
@@ -70,6 +77,8 @@ def get_user_permissions(
     return AccessProfileRead(
         user_id=user.id,
         is_superuser=user.is_superuser,
+        roles=serialize_user_roles(user),
+        direct_permissions=serialize_user_direct_permissions(user),
         permissions=serialize_user_permissions(user),
     )
 
@@ -96,5 +105,7 @@ def replace_user_permissions(
     return AccessProfileRead(
         user_id=user.id,
         is_superuser=user.is_superuser,
+        roles=serialize_user_roles(user),
+        direct_permissions=serialize_user_direct_permissions(user),
         permissions=serialize_user_permissions(user),
     )
