@@ -86,6 +86,33 @@ Both product services now have real functional slices.
 - internal introspection to authorize Core calls;
 - demo user seed with permissions.
 
+`notification_api` has:
+
+- FastAPI app factory;
+- shared dark Swagger/ReDoc theme;
+- shared service landing page at `/`;
+- global error handling;
+- e-mail and Slack delivery acceptance routes;
+- channel/provider status routes;
+- template examples and delivery-attempt state examples;
+- SendGrid and Slack provider configuration points;
+- local acknowledgement mode when real provider credentials are absent;
+- service JWT guard protecting delivery routes;
+- `auth_api -> notification_api` and `core_api -> notification_api` contracts.
+
+`observability_api` has:
+
+- FastAPI app factory;
+- shared dark Swagger/ReDoc theme;
+- shared service landing page at `/`;
+- global error handling;
+- readiness checks for Loki, Grafana and Sentry configuration;
+- incident capture route with local acknowledgement or Sentry forwarding;
+- Loki label/query helpers;
+- Grafana/provider link and health routes;
+- alert-event and release-marker starter contracts;
+- Docker Compose wiring for Loki and Grafana.
+
 ## Services
 
 | Runtime | Status | Responsibility |
@@ -93,11 +120,11 @@ Both product services now have real functional slices.
 | `core_api` | Functional first slice | Business API, Postgres owner, library CRUD, public assets. |
 | `auth_api` | Functional identity API | User CRUD, bcrypt credentials, JWT access/refresh, Redis sessions, RBAC with roles/permissions and `atlas_auth` ownership. |
 | `eventing_api` | Scaffolded API boundary | Kafka-facing contracts, schemas, topics, streams, outbox and projections. |
-| `notification_api` | Scaffolded API boundary | E-mail, Slack, templates, channels and delivery attempts. |
-| `observability_api` | Scaffolded API boundary | Incidents, alerts, dashboards, log queries and releases. |
+| `notification_api` | Functional starter boundary | Protected e-mail/Slack acceptance, provider status, templates and delivery attempts. |
+| `observability_api` | Functional starter boundary | Loki/Grafana readiness, incidents, alerts, dashboards, log queries and releases. |
 | `worker` | Planned runtime | Kafka consumers, outbox dispatching, projections and background jobs. |
 
-The platform APIs exist as service boundaries now. They are not pretending to be complete implementations yet.
+The platform APIs now have useful starter behavior while still avoiding fake completeness. Real provider delivery, deeper retries and event-driven dispatching can be added behind the same service boundaries.
 
 ## Shared Kernel
 
@@ -108,11 +135,14 @@ The platform APIs exist as service boundaries now. They are not pretending to be
 - `shared_kernel.errors.ApplicationError`;
 - `shared_kernel.errors.ErrorTarget`;
 - `shared_kernel.errors.register_exception_handlers`;
-- `shared_kernel.http` for CORS and shared service home pages;
+- `shared_kernel.http` for CORS, shared service home pages and the shared docs theme;
 - `shared_kernel.http.crud` for commands, queries, handlers, guards and CRUD route factories;
 - `shared_kernel.persistence.sqlalchemy` for connection helpers and ORM mixins.
+- `shared_kernel.security.ServiceTokenManager` for service-to-service JWTs.
 
 The shared kernel is intentionally small. It owns primitives that are safe across services, not product rules.
+
+`shared_kernel.security.ServiceTokenManager` creates and validates short-lived service JWTs. Notification uses it to protect delivery routes from direct browser calls and unauthenticated service calls.
 
 ## Error Handling
 
@@ -191,7 +221,17 @@ Each API owns a small `infrastructure/settings.py` file for its own CORS policy.
 
 Public URLs are for browsers, docs and humans. Internal URLs are for service-to-service calls. In bare metal development both point to `localhost`; in Docker Compose internal URLs point to Compose service names such as `http://auth-api:8000`.
 
-Kafka settings live in the `eventing_api` block because Eventing will govern topics, contracts and outbox behavior. Loki/Grafana/Sentry settings live in the `observability_api` block. Notification Redis settings live in the `notification_api` block.
+Kafka settings live in the `eventing_api` block because Eventing will govern topics, contracts and outbox behavior. Loki/Grafana/Sentry settings live in the `observability_api` block. Notification Redis, provider and service-auth settings live in the `notification_api` block.
+
+Notification service-auth settings:
+
+```text
+NOTIFICATION_SERVICE_JWT_SECRET_KEY
+NOTIFICATION_SERVICE_JWT_ALGORITHM
+NOTIFICATION_SERVICE_JWT_ISSUER
+NOTIFICATION_SERVICE_JWT_TTL_SECONDS
+NOTIFICATION_SERVICE_JWT_ALLOWED_CALLERS
+```
 
 `auth_api.infrastructure.settings.AuthSettings` owns Auth-specific configuration for:
 
@@ -243,6 +283,8 @@ The test suite currently covers:
 - service-specific service-name settings;
 - shared CRUD route factory contracts.
 - JSON schemas under `contracts/`;
+- Notification service JWT contracts;
+- Auth/Notification and Core/Notification contract tests;
 - Core and Auth Alembic migrations;
 - GitHub Actions running Ruff, Pytest, API Docker image builds and MkDocs builds.
 

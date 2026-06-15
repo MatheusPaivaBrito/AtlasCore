@@ -6,6 +6,8 @@
 
 Sentry, Grafana and Loki are grouped here under observability workflows.
 
+The service is intentionally a platform boundary around observability behavior. It does not replace Grafana, Loki or Sentry. It gives AtlasCore a stable HTTP surface for health, links and future workflow automation.
+
 ## Current Modules
 
 ```text
@@ -14,6 +16,62 @@ alerts
 dashboards
 log_queries
 releases
+```
+
+## Current Behavior
+
+The service currently provides a functional starter slice:
+
+- shared service home page at `/`;
+- shared dark Swagger/ReDoc theme;
+- `/health`;
+- `/ready`;
+- `GET /dashboards/providers`;
+- `GET /dashboards/providers/health`;
+- `GET /dashboards/links`;
+- `GET /log-queries/labels`;
+- `GET /log-queries/query`;
+- `GET /log-queries/examples`;
+- `POST /incidents`;
+- `GET /incidents/providers`;
+- `GET /alerts/rules`;
+- `POST /alerts/events`;
+- `POST /releases/markers`;
+- `GET /releases/examples`.
+
+## Provider Model
+
+Observability providers are adapters around external tools:
+
+| Provider | Role |
+| --- | --- |
+| Loki | Log storage and query backend. |
+| Grafana | Dashboards and visual exploration. |
+| Sentry | External error tracking when `SENTRY_DSN` is configured. |
+
+Sentry is not started as a local container because the real self-hosted stack is heavy. AtlasCore treats it as an external DSN-based provider.
+
+## Local Runtime
+
+Start local providers:
+
+```bash
+docker compose up -d loki grafana
+```
+
+Run the API:
+
+```bash
+make dev-observability
+```
+
+Useful URLs:
+
+```text
+http://localhost:8004/
+http://localhost:8004/ready
+http://localhost:3000
+http://localhost:3100/ready
 ```
 
 ## Standard Internal Structure
@@ -35,6 +93,8 @@ src/<service>/
 | `bootstrap/app.py` | Creates the FastAPI app. |
 | `bootstrap/routes.py` | Registers routers. |
 | `bootstrap/health.py` | Exposes `/health`. |
+| `bootstrap/home.py` | Renders the shared service landing page. |
+| `bootstrap/docs.py` | Mounts the shared Swagger/ReDoc theme. |
 
 ## What Belongs Here
 

@@ -17,6 +17,7 @@ Essa separação evita tratar JWT como uma senha permanente. O token prova ident
 | Sessão | Redis | Estado runtime do dispositivo logado. |
 | Access token | JWT | Prova curta de autenticação. |
 | Refresh token | JWT + Redis | Renovação controlada por sessão ativa. |
+| Service token | JWT | Prova curta de que um backend pode chamar outro backend. |
 
 ## Por que JWT não basta
 
@@ -183,3 +184,46 @@ Na Core, a regra atual e:
 - Auth valida servico chamador, token, sessao Redis, usuario, `token_version`, roles e permissao `domain:action`.
 
 O contrato completo entre Auth e Core esta documentado em [Contrato Auth/Core](contrato-auth-core.md).
+
+## JWT entre servicos
+
+JWT de usuario e service JWT respondem perguntas diferentes.
+
+JWT de usuario:
+
+```text
+Quem e o usuario?
+```
+
+Service JWT:
+
+```text
+Qual backend esta chamando, para qual audience, e com qual scope de servico?
+```
+
+As rotas de envio da Notification usam service JWT. Exemplo de payload:
+
+```json
+{
+  "iss": "atlascore",
+  "sub": "core_api",
+  "aud": "notification_api",
+  "type": "service",
+  "scope": ["notifications:send"]
+}
+```
+
+Isso impede o frontend de chamar rotas parecidas com provider diretamente. O frontend chama Auth/Core; Auth/Core chamam Notification usando credencial de servico.
+
+Implementacao reutilizavel:
+
+```text
+packages/shared_kernel/src/shared_kernel/security/service_tokens.py
+```
+
+Contratos atuais:
+
+```text
+contracts/auth-notification/
+contracts/core-notification/
+```

@@ -45,6 +45,7 @@ packages/shared_kernel/src/shared_kernel/
   http/
     __init__.py
     cors.py
+    docs.py
     home.py
     templates/
       service_home.html
@@ -62,6 +63,9 @@ packages/shared_kernel/src/shared_kernel/
       __init__.py
       connection.py
       mixins.py
+  security/
+    __init__.py
+    service_tokens.py
   time/
     __init__.py
     datetime_service.py
@@ -76,6 +80,7 @@ As utilidades concretas hoje sao:
 - `shared_kernel.errors.register_exception_handlers`.
 - `shared_kernel.http.CorsConfig`;
 - `shared_kernel.http.apply_cors`;
+- `shared_kernel.http.create_docs_router`;
 - `shared_kernel.http.render_service_home`;
 - `shared_kernel.http.crud.create_crud_router`;
 - `shared_kernel.persistence.sqlalchemy.create_sync_engine`;
@@ -83,6 +88,7 @@ As utilidades concretas hoje sao:
 - `shared_kernel.persistence.sqlalchemy.create_session_dependency`;
 - `shared_kernel.persistence.sqlalchemy.TimestampMixin`;
 - `shared_kernel.persistence.sqlalchemy.SoftDeleteMixin`.
+- `shared_kernel.security.ServiceTokenManager`.
 
 ## Helper de tempo
 
@@ -131,10 +137,35 @@ Cada API chama esse registrador dentro do seu proprio `bootstrap/exceptions.py`,
 O pacote `shared_kernel.http` guarda pecas HTTP genericas:
 
 - `cors.py` liga o middleware CORS no FastAPI;
+- `docs.py` renderiza o Swagger/ReDoc escuro compartilhado;
 - `home.py` renderiza a pagina inicial padrao de cada API;
 - `templates/service_home.html` evita copiar o mesmo HTML para Core, Auth e futuras APIs.
 
 Cada API continua dona do seu texto, links e politica de CORS. O shared kernel so fornece o mecanismo comum.
+
+## Service JWTs
+
+`shared_kernel.security.ServiceTokenManager` cria e valida service JWTs curtos.
+
+Ele e generico:
+
+- nao conhece Notification, Core ou Auth;
+- valida issuer, audience, expiracao, subject e scopes exigidos;
+- retorna um pequeno objeto `ServiceToken`;
+- levanta erros baseados em `ApplicationError` com codigos estaveis.
+
+A Notification usa isso para proteger:
+
+```text
+POST /notifications/email
+POST /notifications/slack
+```
+
+Scope exigido:
+
+```text
+notifications:send
+```
 
 ## CRUD compartilhado
 

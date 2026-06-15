@@ -1,6 +1,6 @@
 # Observability Stack
 
-AtlasCore uses Loki and Grafana locally and plans Sentry integration.
+AtlasCore uses Loki and Grafana locally and supports Sentry through an external DSN.
 
 ## Infrastructure Tools
 
@@ -14,13 +14,42 @@ AtlasCore uses Loki and Grafana locally and plans Sentry integration.
 
 These tools are grouped under `observability_api` because the capability is observability, not a vendor-specific backend.
 
-## Future Adapter Locations
+## Current Local Runtime
 
-```text
-apps/observability_api/src/observability_api/infrastructure/
-  sentry/
-  grafana/
-  loki/
+Start Loki and Grafana:
+
+```bash
+docker compose up -d loki grafana
 ```
 
-Those folders should be created only when the adapters become real code. Application services can also have local observability adapters for logging/correlation/error reporting.
+Run the API:
+
+```bash
+make dev-observability
+```
+
+Useful URLs:
+
+```text
+http://localhost:8004/ready
+http://localhost:3000
+http://localhost:3100/ready
+```
+
+Sentry is configured with:
+
+```text
+SENTRY_DSN
+SENTRY_ENVIRONMENT
+```
+
+Without `SENTRY_DSN`, incident capture still returns `local_ack`.
+
+## Adapter Locations
+
+```text
+apps/observability_api/src/observability_api/infrastructure/providers.py
+apps/observability_api/src/observability_api/infrastructure/sentry.py
+```
+
+Provider-specific folders can be introduced later if the adapters become larger than a small module.

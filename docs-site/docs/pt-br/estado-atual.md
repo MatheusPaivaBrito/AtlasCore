@@ -86,6 +86,33 @@ Os dois servicos de produto ja possuem fatias funcionais reais.
 - introspeccao interna para autorizar chamadas da Core;
 - seed de usuarios demo com permissoes.
 
+`notification_api` possui:
+
+- factory FastAPI;
+- Swagger/ReDoc escuro compartilhado;
+- pagina inicial compartilhada em `/`;
+- tratamento global de erros;
+- rotas de aceite de entrega por e-mail e Slack;
+- rotas de status de canais/providers;
+- exemplos de templates e estados de tentativa de entrega;
+- pontos de configuracao para SendGrid e Slack;
+- modo `local_ack` quando credenciais reais nao existem;
+- guard de service JWT protegendo rotas de envio;
+- contratos `auth_api -> notification_api` e `core_api -> notification_api`.
+
+`observability_api` possui:
+
+- factory FastAPI;
+- Swagger/ReDoc escuro compartilhado;
+- pagina inicial compartilhada em `/`;
+- tratamento global de erros;
+- readiness checando Loki, Grafana e configuracao do Sentry;
+- rota de captura de incidente com `local_ack` ou envio para Sentry quando configurado;
+- helpers de labels/query para Loki;
+- links e health de providers como Grafana;
+- contratos iniciais para alertas e marcadores de release;
+- Docker Compose para Loki e Grafana.
+
 ## Servicos
 
 | Runtime | Estado | Responsabilidade |
@@ -93,11 +120,11 @@ Os dois servicos de produto ja possuem fatias funcionais reais.
 | `core_api` | Primeiro slice funcional | API de negocio, dona do Postgres, CRUD de livraria e assets publicos. |
 | `auth_api` | API de identidade funcional | CRUD de usuarios, credenciais bcrypt, JWT access/refresh, sessoes Redis, RBAC com roles/permissoes e ownership do `atlas_auth`. |
 | `eventing_api` | Fronteira preparada | Contratos Kafka, schemas, topicos, streams, outbox e projections. |
-| `notification_api` | Fronteira preparada | E-mail, Slack, templates, canais e tentativas de entrega. |
-| `observability_api` | Fronteira preparada | Incidentes, alertas, dashboards, consultas de logs e releases. |
+| `notification_api` | Fronteira inicial funcional | Aceite protegido de e-mail/Slack, status de providers, templates e tentativas. |
+| `observability_api` | Fronteira inicial funcional | Readiness Loki/Grafana, incidentes, alertas, dashboards, consultas de logs e releases. |
 | `worker` | Runtime planejado | Consumers Kafka, dispatch de outbox, projections e jobs em background. |
 
-As APIs de plataforma existem como fronteiras de servico. Elas ainda nao fingem ser implementacoes completas.
+As APIs de plataforma agora possuem comportamento inicial util sem fingir completude. Entrega real por provider, retries profundos e dispatch por eventos podem entrar depois atras das mesmas fronteiras.
 
 ## Shared Kernel
 
@@ -108,11 +135,14 @@ As APIs de plataforma existem como fronteiras de servico. Elas ainda nao fingem 
 - `shared_kernel.errors.ApplicationError`;
 - `shared_kernel.errors.ErrorTarget`;
 - `shared_kernel.errors.register_exception_handlers`;
-- `shared_kernel.http` para CORS e pagina inicial compartilhada;
+- `shared_kernel.http` para CORS, pagina inicial compartilhada e tema de docs compartilhado;
 - `shared_kernel.http.crud` para comandos, queries, handlers, guards e fabrica de CRUD;
 - `shared_kernel.persistence.sqlalchemy` para base de conexao e mixins ORM.
+- `shared_kernel.security.ServiceTokenManager` para JWTs entre servicos.
 
 O shared kernel deve continuar pequeno. Ele guarda primitivas seguras de compartilhar, nao regras de produto.
+
+`shared_kernel.security.ServiceTokenManager` cria e valida service JWTs curtos. A Notification usa essa primitiva para impedir chamadas diretas de browser ou servicos nao autenticados nas rotas de envio.
 
 ## Tratamento de erros
 
@@ -191,7 +221,17 @@ Cada API possui um pequeno `infrastructure/settings.py` para sua propria politic
 
 URLs publicas sao para browser, documentacao e pessoas. URLs internas sao para chamada entre servicos. Em desenvolvimento bare metal as duas apontam para `localhost`; no Docker Compose as internas apontam para nomes de servico, como `http://auth-api:8000`.
 
-As variaveis Kafka ficam no bloco da `eventing_api`, porque Eventing sera a fronteira de governanca de topicos, contratos e outbox. As variaveis Loki/Grafana/Sentry ficam no bloco da `observability_api`. Redis de notificacao fica no bloco da `notification_api`.
+As variaveis Kafka ficam no bloco da `eventing_api`, porque Eventing sera a fronteira de governanca de topicos, contratos e outbox. As variaveis Loki/Grafana/Sentry ficam no bloco da `observability_api`. Redis, providers e service-auth de notificacao ficam no bloco da `notification_api`.
+
+Configuracoes de service auth da Notification:
+
+```text
+NOTIFICATION_SERVICE_JWT_SECRET_KEY
+NOTIFICATION_SERVICE_JWT_ALGORITHM
+NOTIFICATION_SERVICE_JWT_ISSUER
+NOTIFICATION_SERVICE_JWT_TTL_SECONDS
+NOTIFICATION_SERVICE_JWT_ALLOWED_CALLERS
+```
 
 `auth_api.infrastructure.settings.AuthSettings` possui configuracao propria para:
 
@@ -243,6 +283,8 @@ A suite cobre hoje:
 - settings de nome de servico por API;
 - fabrica CRUD compartilhada no `shared_kernel`.
 - schemas JSON dos contratos em `contracts/`;
+- contratos de service JWT da Notification;
+- testes de contrato Auth/Notification e Core/Notification;
 - migrations Alembic da Core e do Auth;
 - GitHub Actions executando Ruff, Pytest, build Docker das APIs e build MkDocs.
 

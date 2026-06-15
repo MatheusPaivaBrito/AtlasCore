@@ -43,6 +43,7 @@ packages/shared_kernel/
     http/
       __init__.py
       cors.py
+      docs.py
       home.py
       templates/
         service_home.html
@@ -60,6 +61,9 @@ packages/shared_kernel/
         __init__.py
         connection.py
         mixins.py
+    security/
+      __init__.py
+      service_tokens.py
     time/
       __init__.py
       datetime_service.py
@@ -74,6 +78,7 @@ The concrete utilities today are:
 - `shared_kernel.errors.register_exception_handlers`.
 - `shared_kernel.http.CorsConfig`;
 - `shared_kernel.http.apply_cors`;
+- `shared_kernel.http.create_docs_router`;
 - `shared_kernel.http.render_service_home`;
 - `shared_kernel.http.crud.create_crud_router`;
 - `shared_kernel.persistence.sqlalchemy.create_sync_engine`;
@@ -81,6 +86,7 @@ The concrete utilities today are:
 - `shared_kernel.persistence.sqlalchemy.create_session_dependency`;
 - `shared_kernel.persistence.sqlalchemy.TimestampMixin`;
 - `shared_kernel.persistence.sqlalchemy.SoftDeleteMixin`.
+- `shared_kernel.security.ServiceTokenManager`.
 
 ## Time Helper
 
@@ -135,10 +141,35 @@ Each API calls it from its own `bootstrap/exceptions.py`, passing its service na
 `shared_kernel.http` contains generic HTTP infrastructure:
 
 - `cors.py` wires FastAPI CORS middleware;
+- `docs.py` renders the shared dark Swagger/ReDoc theme;
 - `home.py` renders a standard service landing page;
 - `templates/service_home.html` prevents copying the same HTML into Core, Auth and future APIs.
 
 Each API still owns its own copy, links and CORS policy. The shared kernel only owns the reusable mechanism.
+
+## Service JWTs
+
+`shared_kernel.security.ServiceTokenManager` creates and validates short-lived service JWTs.
+
+It is intentionally generic:
+
+- it does not know about Notification, Core or Auth;
+- it validates issuer, audience, expiration, subject and required scopes;
+- it returns a small `ServiceToken` value object;
+- it raises shared `ApplicationError` subclasses with stable error codes.
+
+Notification uses it to protect:
+
+```text
+POST /notifications/email
+POST /notifications/slack
+```
+
+The required scope is:
+
+```text
+notifications:send
+```
 
 ## Shared CRUD
 

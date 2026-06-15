@@ -60,6 +60,16 @@ channels
 delivery_attempts
 ```
 
+Current starter behavior:
+
+- `POST /notifications/email` accepts e-mail delivery requests;
+- `POST /notifications/slack` accepts Slack delivery requests;
+- delivery routes require a service JWT with `aud=notification_api` and `notifications:send`;
+- `/channels` exposes provider readiness;
+- `/templates/examples` exposes template examples;
+- `/delivery-attempts/examples` documents delivery states;
+- SendGrid and Slack remain provider adapters, not product logic.
+
 ### `observability_api`
 
 Observability platform boundary.
@@ -73,6 +83,14 @@ dashboards
 log_queries
 releases
 ```
+
+Current starter behavior:
+
+- `/ready` checks Loki, Grafana and Sentry configuration;
+- `/incidents` captures an incident locally or forwards it to Sentry when configured;
+- `/log-queries` exposes Loki label/query helpers;
+- `/dashboards` centralizes provider links and health;
+- `/alerts` and `/releases` expose starter contracts for future operations workflows.
 
 ## Background Runtime
 

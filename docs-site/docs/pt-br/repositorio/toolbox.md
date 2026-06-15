@@ -12,6 +12,7 @@ Ele fica separado de `tests/`.
 ```text
 toolbox/
   checks/
+  security/
   scripts/
   seeds/
     auth_api/
@@ -69,3 +70,33 @@ O seed cria:
 Sessoes e refresh tokens nao sao populados por seed porque sao estado runtime. Eles nascem no Redis quando alguem faz login.
 
 Dados de Auth nao devem se misturar com dados de reader da Core. Auth sera dona de identidade; Core sera dona de conceitos de negocio como leitor/cliente quando necessario.
+
+## Service tokens
+
+`toolbox/security/create_service_token.py` cria service JWTs curtos para teste manual local.
+
+Comando padrao:
+
+```bash
+make service-token
+```
+
+Esse comando gera:
+
+```text
+sub = core_api
+aud = notification_api
+scope = notifications:send
+```
+
+Gerar como Auth:
+
+```bash
+make service-token SUBJECT=auth_api
+```
+
+Usar no Insomnia/Postman:
+
+```http
+Authorization: Bearer <token>
+```
