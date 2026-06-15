@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from observability_api.bootstrap.exceptions import register_api_exception_handlers
 from observability_api.bootstrap.routes import register_routes
 from observability_api.infrastructure.settings import settings
-from observability_api.infrastructure.sentry import configure_sentry
+from observability_api.infrastructure.providers import configure_sentry
 from shared_kernel.http import apply_cors
 
 

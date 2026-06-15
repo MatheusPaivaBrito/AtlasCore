@@ -50,6 +50,14 @@ Metadados:
 
 ## Rota atual
 
+O provider do Google Cloud Storage fica em:
+
+```text
+infrastructure/providers/gcp_storage/
+```
+
+Essa decisao segue a mesma regra de Notification e Observability: adapter de provider fica dentro da capacidade dona. GCS e provider de armazenamento para public assets, nao um backend separado do AtlasCore.
+
 | Método | Path | Uso |
 | --- | --- | --- |
 | `GET` | `/public-assets/model` | Explica o modelo de assets públicos. |

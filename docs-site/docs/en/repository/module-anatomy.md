@@ -58,6 +58,30 @@ Typical contents when needed:
 | `providers/` | External SDK adapters. |
 | `cache/` | Redis-backed implementations. |
 
+## Provider Adapters
+
+A provider adapter wraps a vendor or external tool behind AtlasCore language.
+
+Examples:
+
+```text
+notification_api/infrastructure/providers/email.py
+notification_api/infrastructure/providers/slack.py
+notification_api/infrastructure/providers/local_ack.py
+observability_api/infrastructure/providers/loki.py
+observability_api/infrastructure/providers/grafana.py
+observability_api/infrastructure/providers/sentry.py
+core_api/modules/public_assets/infrastructure/providers/gcp_storage/
+```
+
+Providers stay close to the capability that owns them:
+
+- SendGrid/Slack belong to `notification_api`;
+- Loki/Grafana/Sentry belong to `observability_api`;
+- Google Cloud Storage belongs to `core_api.modules.public_assets`.
+
+They should not move to `shared_kernel` unless the code is truly generic and vendor-neutral. A provider can use shared primitives, but the adapter itself is owned by the service or module.
+
 ## `presentation/`
 
 The presentation layer exposes the module to the outside world.

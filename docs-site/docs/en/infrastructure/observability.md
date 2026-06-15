@@ -48,8 +48,11 @@ Without `SENTRY_DSN`, incident capture still returns `local_ack`.
 ## Adapter Locations
 
 ```text
-apps/observability_api/src/observability_api/infrastructure/providers.py
-apps/observability_api/src/observability_api/infrastructure/sentry.py
+apps/observability_api/src/observability_api/infrastructure/providers/
+  http.py
+  loki.py
+  grafana.py
+  sentry.py
 ```
 
-Provider-specific folders can be introduced later if the adapters become larger than a small module.
+Each provider adapter is small and local to `observability_api`. If one adapter grows, it can become a folder without changing the public service boundary.

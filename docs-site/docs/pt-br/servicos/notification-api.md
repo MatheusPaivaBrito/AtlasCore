@@ -98,6 +98,27 @@ contracts/core-notification/slack-delivery/
 
 Os testes de contrato garantem que schemas e comportamento real da rota continuam alinhados.
 
+## Layout dos providers
+
+Providers da Notification vivem em:
+
+```text
+apps/notification_api/src/notification_api/infrastructure/providers/
+  __init__.py
+  email.py
+  slack.py
+  local_ack.py
+  registry.py
+```
+
+`email.py` decide o provider de e-mail. Hoje ele expõe readiness do SendGrid e cai em `local_ack` quando nao existe chave configurada.
+
+`slack.py` decide o provider de Slack. Hoje ele expõe readiness do webhook e cai em `local_ack` quando nao existe URL configurada.
+
+`local_ack.py` e o provider local de desenvolvimento. Ele aceita a requisicao, retorna um `delivery_id` e evita fingir que um provider externo entregou a mensagem.
+
+`registry.py` expõe status de canais/providers para a API.
+
 ## Estrutura
 
 ```text

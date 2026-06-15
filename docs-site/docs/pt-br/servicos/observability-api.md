@@ -45,6 +45,19 @@ A API possui um slice inicial funcional:
 
 Sentry nao sobe como container local porque a stack self-hosted real e pesada. O AtlasCore trata Sentry como provider externo via DSN.
 
+Codigo dos providers:
+
+```text
+apps/observability_api/src/observability_api/infrastructure/providers/
+  __init__.py
+  http.py
+  loki.py
+  grafana.py
+  sentry.py
+```
+
+`http.py` contem helpers HTTP neutros. `loki.py`, `grafana.py` e `sentry.py` sao adapters de ferramenta pertencentes a capacidade de Observability.
+
 ## Runtime local
 
 Subir providers locais:

@@ -51,6 +51,19 @@ Observability providers are adapters around external tools:
 
 Sentry is not started as a local container because the real self-hosted stack is heavy. AtlasCore treats it as an external DSN-based provider.
 
+Provider code lives under:
+
+```text
+apps/observability_api/src/observability_api/infrastructure/providers/
+  __init__.py
+  http.py
+  loki.py
+  grafana.py
+  sentry.py
+```
+
+`http.py` contains provider-neutral HTTP helpers. `loki.py`, `grafana.py` and `sentry.py` are tool adapters owned by the Observability capability.
+
 ## Local Runtime
 
 Start local providers:

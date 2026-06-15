@@ -1,8 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from observability_api.infrastructure.providers import sentry_status
-from observability_api.infrastructure.sentry import capture_incident
+from observability_api.infrastructure.providers import capture_incident, sentry_status
 from shared_kernel.time import DateTimeService
 
 

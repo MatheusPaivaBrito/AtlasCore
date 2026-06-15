@@ -76,6 +76,8 @@ Google Cloud Storage lives here:
 infrastructure/providers/gcp_storage/
 ```
 
+This follows the same provider rule used by Notification and Observability: the adapter stays in the module/API that owns the capability. GCS is a storage provider for public assets, not a separate AtlasCore backend.
+
 That adapter can later handle:
 
 - Upload.
