@@ -979,7 +979,51 @@
   <a href="#modulos" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Módulos
+        Modulos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comportamento-atual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comportamento atual
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#autenticacao-de-servico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Autenticacao de servico
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#teste-manual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Teste manual
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contratos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contratos
       
     </span>
   </a>
@@ -1399,7 +1443,51 @@
   <a href="#modulos" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Módulos
+        Modulos
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#comportamento-atual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Comportamento atual
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#autenticacao-de-servico" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Autenticacao de servico
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#teste-manual" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Teste manual
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#contratos" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contratos
       
     </span>
   </a>
@@ -1436,20 +1524,97 @@
 
 <h1 id="notification-api">Notification API<a class="headerlink" href="#notification-api" title="Permanent link">&para;</a></h1>
 <p>Responsabilidade: <strong>notificações</strong>.</p>
-<h2 id="modulos">Módulos<a class="headerlink" href="#modulos" title="Permanent link">&para;</a></h2>
+<p>Essa API e a fronteira de entrega de mensagens. Core e Auth nao devem conhecer SendGrid, Slack ou detalhes de provider. Eles pedem para a Notification aceitar uma entrega usando autenticacao de servico.</p>
+<h2 id="modulos">Modulos<a class="headerlink" href="#modulos" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>notifications
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>templates
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>channels
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>delivery_attempts
 </code></pre></div>
-<h2 id="estrutura">Estrutura<a class="headerlink" href="#estrutura" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>main.py
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>bootstrap/
-<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>infrastructure/
-<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>modules/
-<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>shared/
+<h2 id="comportamento-atual">Comportamento atual<a class="headerlink" href="#comportamento-atual" title="Permanent link">&para;</a></h2>
+<p>A API possui um slice inicial funcional:</p>
+<ul>
+<li>pagina inicial compartilhada em <code>/</code>;</li>
+<li>Swagger/ReDoc escuro compartilhado;</li>
+<li><code>GET /channels</code>;</li>
+<li><code>GET /channels/providers</code>;</li>
+<li><code>GET /templates/examples</code>;</li>
+<li><code>GET /delivery-attempts/examples</code>;</li>
+<li><code>POST /notifications/email</code>;</li>
+<li><code>POST /notifications/slack</code>.</li>
+</ul>
+<p>Sem credenciais reais de SendGrid/Slack, as rotas retornam <code>local_ack</code>. Isso permite testar contratos e fluxo local sem depender de provider externo.</p>
+<h2 id="autenticacao-de-servico">Autenticacao de servico<a class="headerlink" href="#autenticacao-de-servico" title="Permanent link">&para;</a></h2>
+<p>Rotas protegidas:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>POST /notifications/email
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>POST /notifications/slack
 </code></pre></div>
-<p>Essa API segue DDD + Clean Architecture com módulos verticalizados.</p>
+<p>Elas exigem:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="err">Authorization: Bearer &lt;service-jwt&gt;</span>
+</code></pre></div>
+<p>Claims esperadas:</p>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Regra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>iss</code></td>
+<td><code>atlascore</code></td>
+</tr>
+<tr>
+<td><code>sub</code></td>
+<td><code>auth_api</code> ou <code>core_api</code></td>
+</tr>
+<tr>
+<td><code>aud</code></td>
+<td><code>notification_api</code></td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td><code>service</code></td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>contem <code>notifications:send</code></td>
+</tr>
+</tbody>
+</table>
+<p>Implementacao:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>apps/notification_api/src/notification_api/shared/service_auth.py
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>packages/shared_kernel/src/shared_kernel/security/service_tokens.py
+</code></pre></div>
+<h2 id="teste-manual">Teste manual<a class="headerlink" href="#teste-manual" title="Permanent link">&para;</a></h2>
+<p>Gerar token local:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>make<span class="w"> </span>service-token
+</code></pre></div>
+<p>Usar no Insomnia/Postman:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="err">Authorization: Bearer &lt;token&gt;</span>
+</code></pre></div>
+<p>Gerar token como Auth:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>make<span class="w"> </span>service-token<span class="w"> </span><span class="nv">SUBJECT</span><span class="o">=</span>auth_api
+</code></pre></div>
+<p>Gerar token como Core:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>make<span class="w"> </span>service-token<span class="w"> </span><span class="nv">SUBJECT</span><span class="o">=</span>core_api
+</code></pre></div>
+<h2 id="contratos">Contratos<a class="headerlink" href="#contratos" title="Permanent link">&para;</a></h2>
+<p>Contratos atuais:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>contracts/auth-notification/email-delivery/
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>contracts/core-notification/email-delivery/
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>contracts/core-notification/slack-delivery/
+</code></pre></div>
+<p>Os testes de contrato garantem que schemas e comportamento real da rota continuam alinhados.</p>
+<h2 id="estrutura">Estrutura<a class="headerlink" href="#estrutura" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>main.py
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>bootstrap/
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>infrastructure/
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>modules/
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>shared/
+</code></pre></div>
+<p>Essa API segue DDD + Clean Architecture com modulos verticalizados.</p>
 
 
 

@@ -1711,6 +1711,33 @@
 <li>introspeccao interna para autorizar chamadas da Core;</li>
 <li>seed de usuarios demo com permissoes.</li>
 </ul>
+<p><code>notification_api</code> possui:</p>
+<ul>
+<li>factory FastAPI;</li>
+<li>Swagger/ReDoc escuro compartilhado;</li>
+<li>pagina inicial compartilhada em <code>/</code>;</li>
+<li>tratamento global de erros;</li>
+<li>rotas de aceite de entrega por e-mail e Slack;</li>
+<li>rotas de status de canais/providers;</li>
+<li>exemplos de templates e estados de tentativa de entrega;</li>
+<li>pontos de configuracao para SendGrid e Slack;</li>
+<li>modo <code>local_ack</code> quando credenciais reais nao existem;</li>
+<li>guard de service JWT protegendo rotas de envio;</li>
+<li>contratos <code>auth_api -&gt; notification_api</code> e <code>core_api -&gt; notification_api</code>.</li>
+</ul>
+<p><code>observability_api</code> possui:</p>
+<ul>
+<li>factory FastAPI;</li>
+<li>Swagger/ReDoc escuro compartilhado;</li>
+<li>pagina inicial compartilhada em <code>/</code>;</li>
+<li>tratamento global de erros;</li>
+<li>readiness checando Loki, Grafana e configuracao do Sentry;</li>
+<li>rota de captura de incidente com <code>local_ack</code> ou envio para Sentry quando configurado;</li>
+<li>helpers de labels/query para Loki;</li>
+<li>links e health de providers como Grafana;</li>
+<li>contratos iniciais para alertas e marcadores de release;</li>
+<li>Docker Compose para Loki e Grafana.</li>
+</ul>
 <h2 id="servicos">Servicos<a class="headerlink" href="#servicos" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1738,13 +1765,13 @@
 </tr>
 <tr>
 <td><code>notification_api</code></td>
-<td>Fronteira preparada</td>
-<td>E-mail, Slack, templates, canais e tentativas de entrega.</td>
+<td>Fronteira inicial funcional</td>
+<td>Aceite protegido de e-mail/Slack, status de providers, templates e tentativas.</td>
 </tr>
 <tr>
 <td><code>observability_api</code></td>
-<td>Fronteira preparada</td>
-<td>Incidentes, alertas, dashboards, consultas de logs e releases.</td>
+<td>Fronteira inicial funcional</td>
+<td>Readiness Loki/Grafana, incidentes, alertas, dashboards, consultas de logs e releases.</td>
 </tr>
 <tr>
 <td><code>worker</code></td>
@@ -1753,7 +1780,7 @@
 </tr>
 </tbody>
 </table>
-<p>As APIs de plataforma existem como fronteiras de servico. Elas ainda nao fingem ser implementacoes completas.</p>
+<p>As APIs de plataforma agora possuem comportamento inicial util sem fingir completude. Entrega real por provider, retries profundos e dispatch por eventos podem entrar depois atras das mesmas fronteiras.</p>
 <h2 id="shared-kernel">Shared Kernel<a class="headerlink" href="#shared-kernel" title="Permanent link">&para;</a></h2>
 <p><code>packages/shared_kernel</code> contem hoje:</p>
 <ul>
@@ -1762,11 +1789,13 @@
 <li><code>shared_kernel.errors.ApplicationError</code>;</li>
 <li><code>shared_kernel.errors.ErrorTarget</code>;</li>
 <li><code>shared_kernel.errors.register_exception_handlers</code>;</li>
-<li><code>shared_kernel.http</code> para CORS e pagina inicial compartilhada;</li>
+<li><code>shared_kernel.http</code> para CORS, pagina inicial compartilhada e tema de docs compartilhado;</li>
 <li><code>shared_kernel.http.crud</code> para comandos, queries, handlers, guards e fabrica de CRUD;</li>
 <li><code>shared_kernel.persistence.sqlalchemy</code> para base de conexao e mixins ORM.</li>
+<li><code>shared_kernel.security.ServiceTokenManager</code> para JWTs entre servicos.</li>
 </ul>
 <p>O shared kernel deve continuar pequeno. Ele guarda primitivas seguras de compartilhar, nao regras de produto.</p>
+<p><code>shared_kernel.security.ServiceTokenManager</code> cria e valida service JWTs curtos. A Notification usa essa primitiva para impedir chamadas diretas de browser ou servicos nao autenticados nas rotas de envio.</p>
 <h2 id="tratamento-de-erros">Tratamento de erros<a class="headerlink" href="#tratamento-de-erros" title="Permanent link">&para;</a></h2>
 <p>Toda API registra o mesmo contrato compartilhado de erro dentro do proprio <code>bootstrap/exceptions.py</code>.</p>
 <p>O formato de resposta inclui:</p>
@@ -1828,7 +1857,14 @@
 </ul>
 <p>Cada API possui um pequeno <code>infrastructure/settings.py</code> para sua propria politica de CORS. APIs de produto (<code>core_api</code> e <code>auth_api</code>) aceitam as origens locais do frontend por padrao. APIs de plataforma nascem sem origem de browser, porque comunicacao backend-to-backend deve usar URLs internas e autenticacao de servico, nao CORS.</p>
 <p>URLs publicas sao para browser, documentacao e pessoas. URLs internas sao para chamada entre servicos. Em desenvolvimento bare metal as duas apontam para <code>localhost</code>; no Docker Compose as internas apontam para nomes de servico, como <code>http://auth-api:8000</code>.</p>
-<p>As variaveis Kafka ficam no bloco da <code>eventing_api</code>, porque Eventing sera a fronteira de governanca de topicos, contratos e outbox. As variaveis Loki/Grafana/Sentry ficam no bloco da <code>observability_api</code>. Redis de notificacao fica no bloco da <code>notification_api</code>.</p>
+<p>As variaveis Kafka ficam no bloco da <code>eventing_api</code>, porque Eventing sera a fronteira de governanca de topicos, contratos e outbox. As variaveis Loki/Grafana/Sentry ficam no bloco da <code>observability_api</code>. Redis, providers e service-auth de notificacao ficam no bloco da <code>notification_api</code>.</p>
+<p>Configuracoes de service auth da Notification:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>NOTIFICATION_SERVICE_JWT_SECRET_KEY
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>NOTIFICATION_SERVICE_JWT_ALGORITHM
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>NOTIFICATION_SERVICE_JWT_ISSUER
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>NOTIFICATION_SERVICE_JWT_TTL_SECONDS
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>NOTIFICATION_SERVICE_JWT_ALLOWED_CALLERS
+</code></pre></div>
 <p><code>auth_api.infrastructure.settings.AuthSettings</code> possui configuracao propria para:</p>
 <ul>
 <li>database <code>atlas_auth</code>;</li>
@@ -1849,7 +1885,7 @@
 </ul>
 <p>Isso deixa a navegacao de cada idioma limpa, em vez de misturar portugues e ingles em todas as paginas.</p>
 <p>O deploy publico usa:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> </span>gh-deploy<span class="w"> </span>--force<span class="w"> </span>-f<span class="w"> </span>docs-site/mkdocs.yml
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>poetry<span class="w"> </span>run<span class="w"> </span>mkdocs<span class="w"> </span>gh-deploy<span class="w"> </span>--force<span class="w"> </span>-f<span class="w"> </span>docs-site/mkdocs.yml
 </code></pre></div>
 <p><code>docs-site/mkdocs.yml</code> aponta para a versao PT-BR principal publicada no GitHub Pages.</p>
 <h2 id="testes">Testes<a class="headerlink" href="#testes" title="Permanent link">&para;</a></h2>
@@ -1872,6 +1908,8 @@
 <li>settings de nome de servico por API;</li>
 <li>fabrica CRUD compartilhada no <code>shared_kernel</code>.</li>
 <li>schemas JSON dos contratos em <code>contracts/</code>;</li>
+<li>contratos de service JWT da Notification;</li>
+<li>testes de contrato Auth/Notification e Core/Notification;</li>
 <li>migrations Alembic da Core e do Auth;</li>
 <li>GitHub Actions executando Ruff, Pytest, build Docker das APIs e build MkDocs.</li>
 </ul>
@@ -1887,7 +1925,7 @@
 <li>gera a documentacao PT-BR e EN com <code>--strict</code>.</li>
 </ol>
 <p>O alvo <code>make build-apis</code> chama:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>apis<span class="w"> </span>build
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>docker<span class="w"> </span>compose<span class="w"> </span>--profile<span class="w"> </span>apis<span class="w"> </span>build
 </code></pre></div>
 <p>Esse profile constroi as imagens de:</p>
 <ul>
@@ -1898,20 +1936,20 @@
 <li><code>observability-api</code>.</li>
 </ul>
 <p>Comandos individuais tambem existem:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>make<span class="w"> </span>build-core
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>make<span class="w"> </span>build-auth
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>make<span class="w"> </span>build-eventing
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>make<span class="w"> </span>build-notifications
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>make<span class="w"> </span>build-observability
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>make<span class="w"> </span>build-core
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>make<span class="w"> </span>build-auth
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>make<span class="w"> </span>build-eventing
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>make<span class="w"> </span>build-notifications
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>make<span class="w"> </span>build-observability
 </code></pre></div>
 <h2 id="toolbox">Toolbox<a class="headerlink" href="#toolbox" title="Permanent link">&para;</a></h2>
 <p><code>toolbox/</code> guarda scripts uteis para desenvolvimento local e demos, mas que nao devem rodar como testes automatizados.</p>
 <p>Script atual:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>make<span class="w"> </span>seed-core
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>make<span class="w"> </span>seed-core
 </code></pre></div>
 <p>Esse comando executa <code>toolbox/seeds/core_api/library_seed.py</code> e popula o banco da Core com dados mockados de livraria.</p>
 <p>A Auth API tambem possui seed executavel:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>make<span class="w"> </span>seed-auth
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>make<span class="w"> </span>seed-auth
 </code></pre></div>
 <p>Esse comando executa <code>toolbox/seeds/auth_api/user_seed.py</code> e cria usuarios demo com credenciais hashadas em bcrypt e permissoes RBAC:</p>
 <ul>

@@ -598,6 +598,24 @@
         
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Catálogo de Serviços
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         
   
@@ -614,6 +632,36 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Índice">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#estado-atual-das-apis-de-plataforma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Estado atual das APIs de plataforma
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1330,6 +1378,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Índice
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#estado-atual-das-apis-de-plataforma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Estado atual das APIs de plataforma
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1388,6 +1455,27 @@
 </tbody>
 </table>
 <p><code>bucket_api</code> não existe mais porque bucket é detalhe de provider. Imagens e documentos públicos pertencem ao módulo <code>public_assets</code> do <code>core_api</code>.</p>
+<h2 id="estado-atual-das-apis-de-plataforma">Estado atual das APIs de plataforma<a class="headerlink" href="#estado-atual-das-apis-de-plataforma" title="Permanent link">&para;</a></h2>
+<p><code>notification_api</code> já possui um slice inicial funcional:</p>
+<ul>
+<li><code>POST /notifications/email</code>;</li>
+<li><code>POST /notifications/slack</code>;</li>
+<li>rotas de envio protegidas por service JWT;</li>
+<li>status de canais/providers;</li>
+<li>exemplos de templates;</li>
+<li>exemplos de estados de tentativa de entrega.</li>
+</ul>
+<p>O scope exigido para envio é:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>notifications:send
+</code></pre></div>
+<p><code>observability_api</code> já possui um slice inicial funcional:</p>
+<ul>
+<li><code>/ready</code> checando Loki, Grafana e Sentry;</li>
+<li>captura de incidentes;</li>
+<li>helpers de query/labels do Loki;</li>
+<li>links e health de dashboards/providers;</li>
+<li>contratos iniciais para alertas e releases.</li>
+</ul>
 
 
 

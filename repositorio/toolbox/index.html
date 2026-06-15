@@ -537,6 +537,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#service-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service tokens
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1417,6 +1428,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#service-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Service tokens
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1444,10 +1466,11 @@
 <h2 id="estrutura">Estrutura<a class="headerlink" href="#estrutura" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>toolbox/
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  checks/
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  scripts/
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  seeds/
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    auth_api/
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    core_api/
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  security/
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  scripts/
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  seeds/
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    auth_api/
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    core_api/
 </code></pre></div>
 <h2 id="seeds">Seeds<a class="headerlink" href="#seeds" title="Permanent link">&para;</a></h2>
 <p>Seeds ficam agrupados por servico porque cada servico pode ter seu proprio banco.</p>
@@ -1507,6 +1530,22 @@
 </table>
 <p>Sessoes e refresh tokens nao sao populados por seed porque sao estado runtime. Eles nascem no Redis quando alguem faz login.</p>
 <p>Dados de Auth nao devem se misturar com dados de reader da Core. Auth sera dona de identidade; Core sera dona de conceitos de negocio como leitor/cliente quando necessario.</p>
+<h2 id="service-tokens">Service tokens<a class="headerlink" href="#service-tokens" title="Permanent link">&para;</a></h2>
+<p><code>toolbox/security/create_service_token.py</code> cria service JWTs curtos para teste manual local.</p>
+<p>Comando padrao:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>make<span class="w"> </span>service-token
+</code></pre></div>
+<p>Esse comando gera:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>sub = core_api
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>aud = notification_api
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>scope = notifications:send
+</code></pre></div>
+<p>Gerar como Auth:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>make<span class="w"> </span>service-token<span class="w"> </span><span class="nv">SUBJECT</span><span class="o">=</span>auth_api
+</code></pre></div>
+<p>Usar no Insomnia/Postman:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="err">Authorization: Bearer &lt;token&gt;</span>
+</code></pre></div>
 
 
 
