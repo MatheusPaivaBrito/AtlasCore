@@ -19,4 +19,6 @@ class CrudRouteGuards:
 
 
 def resolve_guard(guard: Any | None) -> Any:
-    return guard or Depends(allow_anonymous)
+    if guard is not None:
+        return guard
+    return Depends(allow_anonymous)

@@ -18,6 +18,7 @@ DOCS_PT = docs-site/mkdocs.pt-br.yml
 DOCS_EN = docs-site/mkdocs.en.yml
 ENSURE_RUNTIME = poetry run python toolbox/checks/ensure_runtime_dependencies.py
 SERVICE_TOKEN_SCRIPT = poetry run python toolbox/security/create_service_token.py
+AUTH_CORE_SMOKE = poetry run python toolbox/smoke/auth_core_smoke.py
 CORE_MIGRATE_JOB = core-migrate
 AUTH_MIGRATE_JOB = auth-migrate
 CORE_SEED_JOB = core-seed
@@ -69,7 +70,7 @@ OBSERVABILITY_PYTHONPATH = apps/observability_api/src:$(SHARED_PYTHONPATH)
 	migrate migrate-core migrate-auth migrate-all migrate-local migrate-core-local migrate-auth-local \
 	revision revision-core revision-auth \
 	seed seed-core seed-auth seed-all seed-local seed-core-local seed-auth-local \
-	service-token docs docs-pt docs-en docs-all test
+	service-token docs docs-pt docs-en docs-all test smoke-auth-core
 
 # ------------------------------------
 # HELP PAGES
@@ -232,6 +233,7 @@ help-docs:
 	@echo ""
 	@echo "Quality"
 	@echo "  make test                 Run pytest"
+	@echo "  make smoke-auth-core      Run live Auth/Core login, introspection and protected Core route validation"
 
 # ------------------------------------
 # DOCKER COMPOSE
@@ -504,3 +506,8 @@ docs-all:
 
 test:
 	poetry run pytest
+
+smoke-auth-core: ensure-core ensure-auth migrate-local seed-local
+	@if [ -f "$(ENV_FILE)" ]; then set -a; . ./$(ENV_FILE); set +a; fi; \
+	PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=$(AUTH_PYTHONPATH):$(CORE_PYTHONPATH) \
+	$(AUTH_CORE_SMOKE) --env-file $(ENV_FILE) --start-services
