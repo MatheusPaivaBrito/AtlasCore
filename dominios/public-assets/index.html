@@ -1536,6 +1536,10 @@
 <li><code>size_bytes</code>.</li>
 </ul>
 <h2 id="rota-atual">Rota atual<a class="headerlink" href="#rota-atual" title="Permanent link">&para;</a></h2>
+<p>O provider do Google Cloud Storage fica em:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>infrastructure/providers/gcp_storage/
+</code></pre></div>
+<p>Essa decisao segue a mesma regra de Notification e Observability: adapter de provider fica dentro da capacidade dona. GCS e provider de armazenamento para public assets, nao um backend separado do AtlasCore.</p>
 <table>
 <thead>
 <tr>
