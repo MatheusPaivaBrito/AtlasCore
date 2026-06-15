@@ -1,20 +1,37 @@
 .git
 .github
+.codex
+
+# Python/cache
 .mypy_cache
 .pytest_cache
 .ruff_cache
 .venv
+venv
+env
+ENV
 __pycache__
 *.pyc
 *.pyo
+.coverage
+.coverage.*
+htmlcov
+coverage.xml
 
+# Local environment and secrets
 .env
 .env.*
 !.env.example
 
+# Documentation/build output not needed in API images
 docs-site/site
-htmlcov
-.coverage
 
+# Local Docker/bind-mounted data
 postgres_data
 redis_data
+
+# OS/editor
+.DS_Store
+.idea
+.vscode
+*.log

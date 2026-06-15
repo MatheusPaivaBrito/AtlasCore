@@ -2,24 +2,56 @@
 __pycache__/
 *.py[cod]
 *.pyo
+$py.class
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
+.tox/
+.nox/
 .coverage
+.coverage.*
 htmlcov/
+coverage.xml
+
+# Build/package output
+build/
+dist/
+*.egg-info/
+.eggs/
 
 # Virtual environments
 .venv/
 venv/
+env/
+ENV/
 
 # Local environment
 .env
+.env.*
 !.env.example
+
+# Local Codex working memory
+.codex/
 
 # MkDocs build output
 docs-site/site/
 
+# Logs and local databases
+*.log
+logs/
+*.sqlite
+*.sqlite3
+*.db
+
+# Local Docker/bind-mounted data
+postgres_data/
+redis_data/
+
 # OS/editor
 .DS_Store
+.swp
+.swo
+.tmp
 .idea/
 .vscode/
